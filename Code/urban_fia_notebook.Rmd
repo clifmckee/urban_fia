@@ -184,6 +184,8 @@ tree_city_sf <- st_as_sf(tree_city_coords, coords = c("lng", "lat"), crs = st_cr
 ggplot() +
   geom_sf(data = ecoregions1_simple, aes(fill = NA_L1NAME)) +
   geom_sf(data = tree_city_sf) +
+  geom_sf_text(data = tree_city_sf, aes(label = camelname),
+               size = 2, angle = -30, nudge_x = 0.75, nudge_y = -0.75) +
   scale_fill_viridis_d(name = "Ecoregion I", option = "H") +
   theme_void(base_size = 8) +
   theme(legend.position = "bottom") +
