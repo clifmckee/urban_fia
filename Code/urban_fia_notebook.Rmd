@@ -1,0 +1,267 @@
+---
+title: "Urban FIA community ecology analysis"
+author: "Clifton McKee"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+## Load packages and functions
+
+```{r packages-functions}
+# Load packages
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(sf)
+library(vegan)
+library(ggrepel)
+```
+
+### Data import
+
+* Data sources:
+  + [EPA Ecoregions of North America](https://www.epa.gov/eco-research/ecoregions-north-america)
+  + [United States Cities Database](https://simplemaps.com/data/us-cities)
+
+```{r data-import}
+# Import main urban tree data file and clean some columns
+trees <- read_csv("Data/cities_2022_trees.csv") %>% 
+  rename(RowID = `...1`) %>% 
+  mutate(city = str_sub(EVALID, 1, -9),
+         city = case_when(city == "MinneapolMN" ~ "MinneapolisMN",
+                          city == "SpringfielMO" ~ "SpringfieldMO",
+                          TRUE ~ city))
+
+# Import city land use data file and clean some columns
+landuse <- read_excel("Data/cities_2022_ownership_landuse.xlsx",
+                      sheet = "Cities") %>% 
+  mutate(city = case_when(city == "MinneapolMN" ~ "MinneapolisMN",
+                          city == "SpringfielMO" ~ "SpringfieldMO",
+                          TRUE ~ city))
+
+# Import EPA Ecoregions level I data
+ecoregions1 <- st_read("Data/Ecoregions/na_cec_eco_l1/NA_CEC_Eco_Level1.shp",
+                       quiet = TRUE) %>% 
+  mutate(NA_L1NAME = str_to_lower(NA_L1NAME))
+
+# Import database of US cities with coordinates
+city_coords <- read_csv("Data/City coordinates/uscities.csv") %>% 
+  mutate(camelname = paste0(str_remove_all(city, "[\\.\\s]"), state_id))
+
+# Filter the city coordinates to the cities with urban tree data
+tree_city_coords <- city_coords %>% 
+  filter(camelname %in% landuse$city)
+
+# Merged city data with coordinates
+tree_city_merge <- full_join(x = landuse,
+                             y = tree_city_coords,
+                             by = c("city" = "camelname"))
+```
+
+### City profiles
+
+#### Number of plots
+
+```{r city-plots}
+# Plot total city plots
+tree_city_merge %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = plot_count_Curr)) +
+  labs(x = "City (ordered by longitude)", y = "Total city plots") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Number of forested plots
+
+```{r forested-plots}
+# Forested plots per city
+trees %>% 
+  full_join(tree_city_coords, by = c("city" = "camelname")) %>%
+  group_by(city, lat, lng) %>%
+  summarize(plots = n_distinct(PLOTID)) %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = plots)) +
+  labs(x = "City (ordered by longitude)", y = "Total forested city plots") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Total land area
+
+```{r city-acreage}
+# Plot total city land area
+tree_city_merge %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = city_acres)) +
+  labs(x = "City (ordered by longitude)", y = "Total city land area (acres)") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Total population
+
+```{r city-population}
+# Plot total city population
+tree_city_merge %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = population)) +
+  labs(x = "City (ordered by longitude)", y = "Population") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Population density
+
+```{r city-density}
+# Plot city population density
+tree_city_merge %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = density)) +
+  labs(x = "City (ordered by longitude)", y = "Population density (per sq km)") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Ownership of city land area
+
+```{r land-ownership}
+# Plot the proportion of city acreage by ownership
+tree_city_merge %>% 
+  pivot_longer(ForestService:StateLocal,
+               names_to = "Ownership",
+               values_to = "Acreage") %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = Acreage,
+               fill = Ownership),
+           position = "fill") +
+  scale_fill_viridis_d(option = "H") +
+  labs(x = "City (ordered by longitude)", y = "Proportion of city land area") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### City land area by land use type
+
+```{r land-use}
+# Plot the proportion of city acreage by landuse type
+tree_city_merge %>% 
+  pivot_longer(Agriculture:Water,
+               names_to = "Type",
+               values_to = "Acreage") %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = Acreage,
+               fill = Type),
+           position = "fill") +
+  scale_fill_viridis_d(option = "H") +
+  labs(x = "City (ordered by longitude)", y = "Proportion of city land area") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Ecoregions of cities
+
+```{r ecoregions1}
+# Simplify the polygons
+ecoregions1_simple <- st_simplify(ecoregions1, preserveTopology = TRUE, dTolerance = 1000) %>% 
+  st_transform(crs = "EPSG:4326")
+
+# Turn coordinates into an sf object with correct CRS
+tree_city_sf <- st_as_sf(tree_city_coords, coords = c("lng", "lat"), crs = st_crs(ecoregions1_simple))
+
+# Plot the cities over ecoregions (level I)
+ggplot() +
+  geom_sf(data = ecoregions1_simple, aes(fill = NA_L1NAME)) +
+  geom_sf(data = tree_city_sf) +
+  scale_fill_viridis_d(name = "Ecoregion I", option = "H") +
+  theme_void(base_size = 8) +
+  theme(legend.position = "bottom") +
+  coord_sf(xlim = c(-125, -67), ylim = c(24, 49))
+```
+
+### Species diversity in surveyed cities
+
+#### Species accumulation curves
+
+```{r species-accumulation}
+# Convert tree data to community dataset, pooled by plots within city
+tree_community_plots <- trees %>% 
+  group_by(city, PLOTID, scientific) %>% 
+  summarize(count = n()) %>% 
+  pivot_wider(names_from = scientific, values_from = count) %>% 
+  replace(is.na(.), 0)
+
+# Calculate species accumulation curves across cities
+poolaccum_fun <- function(city, nperm, measure) {
+  sp <- poolaccum(tree_community_plots[tree_community_plots$city == city, -c(1, 2)],
+                  permutations = nperm, minsize = 3)
+  data.frame(city = city, summary(sp)[[measure]])
+}
+poolaccum_S <- NULL
+for(i in 1:length(tree_city_merge$city)){
+  poolaccum_S <- rbind(poolaccum_S, poolaccum_fun(tree_city_merge$city[i], 100, "S"))
+}
+poolaccum_S <- clean_names(poolaccum_S)
+
+# Plot species accumulation curves by city
+poolaccum_S %>% 
+  ggplot() +
+  geom_ribbon(aes(x = n, ymin = x2_5, ymax = x97_5, fill = city), alpha = 0.1) +
+  geom_line(aes(x = n, y = s, color = city)) +
+  geom_text_repel(data = poolaccum_S %>% 
+              group_by(city) %>% 
+              slice_tail(n = 1),
+              aes(label = paste0(city, " = ", s),
+                  x = n,
+                  y = s,
+                  color = city),
+              nudge_x = 5,
+              min.segment.length = 2,
+              size = 2.5) +
+  scale_color_viridis_d(option = "H") +
+  scale_fill_viridis_d(option = "H") +
+  labs(x = "Number of forested plots", y = "Tree species") +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "none")
+```
+
+#### Extrapolated species richness
+
+```{r extrapolate-species}
+# Extrapolate species diversity from pooled plots within cities
+pooled_accum <- with(tree_community_plots[, c(1, 2)],
+             specpool(tree_community_plots[, -c(1, 2)],
+                      city,
+                      smallsample = TRUE)) %>%
+  rownames_to_column("city") %>% 
+  rename(Species.est = Species,
+         chao.est = chao,
+         jack1.est = jack1,
+         jack2.est = jack2,
+         boot.est = boot) %>% 
+  pivot_longer(Species.est:boot.se,
+               names_to = c("estimate", "measure"), names_sep = "\\.",
+               values_to = "value") %>% 
+  pivot_wider(names_from = measure, values_from = value)
+
+# Plot extrapolated species richness indices by city
+pooled_accum %>% 
+  ggplot() +
+  geom_col(aes(x = city, y = est)) +
+  geom_errorbar(aes(x = reorder(city, est, median, decreasing = TRUE), ymin = est - se, ymax = est + se), width = 0) +
+  facet_wrap(~estimate) +
+  labs(x = "City (ordered by median richness)", y = "Species richness estimate") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8))
+```
