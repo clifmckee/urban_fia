@@ -1283,6 +1283,76 @@ ggplot() +
 ggsave("Results/metaMDS_species_composition.pdf", height = 5, width = 7)
 ```
 
+#### Compositional differences (forest)
+
+```{r MDS-forest}
+# Community composition of each city
+city_comm_forest <- live_trees %>% 
+  filter(FIA_LANDUSE %in% c("Forest land", "Rangeland/Chaparral")) %>% 
+  group_by(city, scientific) %>% 
+  count() %>% 
+  pivot_wider(names_from = scientific, values_from = n) %>%
+  replace(is.na(.), 0) %>%
+  column_to_rownames(var = "city")
+
+# Perform MDS on community diversity
+set.seed(20250720)
+bray_mds_forest <- metaMDS(city_comm_forest, distance = "bray")
+bray_mds_cities_forest <- data.frame(bray_mds_forest$points) %>% 
+  rownames_to_column(var = "city") %>% 
+  inner_join(y = city_ecoreg)
+bray_mds_species_forest <- data.frame(bray_mds_forest$species) %>% 
+  rownames_to_column(var = "scientific")
+
+# Plot
+ggplot() +
+  geom_text(data = bray_mds_cities_forest, aes(x = MDS1, y = MDS2, label = city,
+                                        color = classification_3),
+            size = 2) +
+  geom_point(data = bray_mds_species_forest, aes(x = MDS1, y = MDS2),
+             shape = 1, size = 0.5,
+             position = position_jitter(width = 0.05, height = 0.05)) +
+  scale_color_brewer(name = "Group", palette = "Dark2") +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "bottom")
+ggsave("Results/metaMDS_species_composition_forest.pdf", height = 5, width = 7)
+```
+
+#### Compositional differences (planted)
+
+```{r MDS-non-forest}
+# Community composition of each city
+city_comm_nonforest <- live_trees %>% 
+  filter(IS_PLANTED == 1) %>% 
+  group_by(city, scientific) %>% 
+  count() %>% 
+  pivot_wider(names_from = scientific, values_from = n) %>%
+  replace(is.na(.), 0) %>%
+  column_to_rownames(var = "city")
+
+# Perform MDS on community diversity
+set.seed(20250720)
+bray_mds_nonforest <- metaMDS(city_comm_nonforest, distance = "bray")
+bray_mds_cities_nonforest <- data.frame(bray_mds_nonforest$points) %>% 
+  rownames_to_column(var = "city") %>% 
+  inner_join(y = city_ecoreg)
+bray_mds_species_nonforest <- data.frame(bray_mds_nonforest$species) %>% 
+  rownames_to_column(var = "scientific")
+
+# Plot
+ggplot() +
+  geom_text(data = bray_mds_cities_nonforest, aes(x = MDS1, y = MDS2, label = city,
+                                        color = classification_3),
+            size = 2) +
+  geom_point(data = bray_mds_species_nonforest, aes(x = MDS1, y = MDS2),
+             shape = 1, size = 0.5,
+             position = position_jitter(width = 0.05, height = 0.05)) +
+  scale_color_brewer(name = "Group", palette = "Dark2") +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "bottom")
+ggsave("Results/metaMDS_species_composition_nonforest.pdf", height = 5, width = 7)
+```
+
 ### Public vs. private land {.tabset}
 
 #### Species richness (codyn)
@@ -1461,6 +1531,28 @@ basal_public %>%
   select(city, classification_3, own2, total_basal) %>% 
   kable()
 write_csv(basal_public, "Results/basal_area_public_v_private.csv")
+```
+
+#### Size profiles
+
+```{r public-size-profiles, fig.width=11, fig.height=8.5}
+# Density plots for DBH on public v private land
+live_trees %>% 
+  mutate(own2 = case_when(OWNGRPCD != "Private" ~ "Public",
+                          TRUE ~ OWNGRPCD))  %>% 
+  inner_join(y = tree_city_merge) %>%
+  inner_join(y = city_ecoreg) %>% 
+  ggplot() +
+  geom_density(aes(x = DIA, color = own2)) +
+  scale_color_manual(name = "Ownership", values = c("black", "grey50")) +
+  scale_x_continuous(breaks = seq(5, 65, 5)) +
+  labs(x = "Diameter at breast height (inches)", y = "Density") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom") +
+  facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x") +
+  facet_wrap(~city + classification_3)
+ggsave("Results/size_density_profiles_public_v_private.pdf", height = 8.5, width = 11)
 ```
 
 #### Size classes
@@ -1765,6 +1857,33 @@ basal_planted %>%
   select(city, classification_3, planted_def, total_basal) %>% 
   kable()
 write_csv(basal_planted, "Results/basal_area_planted_v_not_planted.csv")
+```
+
+#### Size profiles
+
+```{r planted-size-profiles}
+# Density plots for DBH on public v private land
+live_trees %>% 
+  mutate(IS_PLANTED = case_when(is.na(IS_PLANTED) & 
+                                  FIA_LANDUSE == "Forest land" ~ 2,
+                                TRUE ~ IS_PLANTED),
+         planted_def = case_when(IS_PLANTED == 1 ~ "planted",
+                                 IS_PLANTED == 2 ~ "natural regeneration",
+                                 IS_PLANTED == 3 ~ "not sure")) %>% 
+  inner_join(y = tree_city_merge) %>%
+  inner_join(y = city_ecoreg) %>% 
+  filter(planted_def != "not sure") %>% 
+  ggplot() +
+  geom_density(aes(x = DIA, color = planted_def)) +
+  scale_color_manual(name = "Planted", values = c("black", "grey50")) +
+  scale_x_continuous(breaks = seq(5, 65, 5)) +
+  labs(x = "Diameter at breast height (inches)", y = "Density") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom") +
+  facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x") +
+  facet_wrap(~city + classification_3)
+ggsave("Results/size_density_profiles_planted_v_not_planted.pdf", height = 8.5, width = 11)
 ```
 
 #### Size classes
