@@ -40,10 +40,11 @@ library(codyn)
 
 ```{r data-import}
 # Import main urban tree data file and clean some columns
-trees <- read_csv("Data/cities_2022_trees.csv") %>% 
+trees <- read_csv("Data/cities_2023_trees_w_Rochester.csv") %>% 
   rename(RowID = `...1`) %>% 
   mutate(city = str_sub(EVALID, 1, -9),
          city = case_when(city == "MinneapolMN" ~ "MinneapolisMN",
+                          city == "PhiladelphPA" ~ "PhiladelphiaPA",
                           city == "SpringfielMO" ~ "SpringfieldMO",
                           TRUE ~ city))
 
@@ -58,17 +59,19 @@ dead_trees <- trees %>%
          SUBP %ni% c(11,12,13, 14))
 
 # Import city land use data file and clean some columns
-landuse <- read_excel("Data/cities_2022_ownership_landuse.xlsx",
+landuse <- read_excel("Data/cities_2023_ownership_landuse_w_Rochester.xlsx",
                       sheet = "Cities") %>% 
   mutate(city = case_when(city == "MinneapolMN" ~ "MinneapolisMN",
+                          city == "PhiladelphPA" ~ "PhiladelphiaPA",
                           city == "SpringfielMO" ~ "SpringfieldMO",
                           TRUE ~ city))
 
 # Import city plots and condition and clean some columns
-plot_cond <- read_excel("Data/cities_2022_ownership_landuse.xlsx",
+plot_cond <- read_excel("Data/cities_2023_ownership_landuse_w_Rochester.xlsx",
                       sheet = "Cond") %>% 
   mutate(city = str_sub(EVALID, 1, -9),
          city = case_when(city == "MinneapolMN" ~ "MinneapolisMN",
+                          city == "PhiladelphPA" ~ "PhiladelphiaPA",
                           city == "SpringfielMO" ~ "SpringfieldMO",
                           TRUE ~ city))
 

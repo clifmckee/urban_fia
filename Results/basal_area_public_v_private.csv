@@ -1,66 +1,81 @@
 city,classification_3,planted_def,"[5,7)","[7,9)","[9,11)","[11,Inf)"
-AustinTX,not forested,natural regeneration,697,524,337,537
-AustinTX,not forested,not sure,3,NA,NA,2
-AustinTX,not forested,planted,57,45,30,87
-BaltimoreMD,forested,natural regeneration,77,60,43,136
-BaltimoreMD,forested,not sure,9,5,2,38
-BaltimoreMD,forested,planted,32,24,15,92
-BurlingtonVT,forested,natural regeneration,236,185,130,349
-BurlingtonVT,forested,not sure,9,5,9,34
-BurlingtonVT,forested,planted,12,15,13,49
-ChicagoIL,forested,natural regeneration,17,22,8,30
+AustinTX,not forested,natural regeneration,645,486,320,500
+AustinTX,not forested,not sure,NA,NA,NA,2
+AustinTX,not forested,planted,57,46,30,83
+BaltimoreMD,forested,natural regeneration,77,59,43,136
+BaltimoreMD,forested,not sure,9,5,2,36
+BaltimoreMD,forested,planted,31,25,14,96
+BurlingtonVT,forested,natural regeneration,231,188,131,352
+BurlingtonVT,forested,not sure,9,4,9,32
+BurlingtonVT,forested,planted,15,15,17,50
+ChicagoIL,forested,natural regeneration,21,22,10,41
 ChicagoIL,forested,not sure,2,1,2,15
-ChicagoIL,forested,planted,23,26,17,101
-ClevelandOH,forested,natural regeneration,50,36,22,64
-ClevelandOH,forested,not sure,6,2,1,19
-ClevelandOH,forested,planted,23,14,14,47
-DesMoinesIA,not forested,natural regeneration,118,79,58,178
-DesMoinesIA,not forested,not sure,1,2,2,31
-DesMoinesIA,not forested,planted,24,28,17,81
-HoustonTX,not forested,natural regeneration,225,141,100,188
-HoustonTX,not forested,not sure,2,2,1,31
-HoustonTX,not forested,planted,38,27,16,104
-KansasCityMO,not forested,natural regeneration,263,185,125,255
-KansasCityMO,not forested,not sure,2,3,4,35
-KansasCityMO,not forested,planted,18,11,10,28
-MadisonWI,forested,natural regeneration,93,64,31,125
-MadisonWI,forested,not sure,5,3,2,19
-MadisonWI,forested,planted,43,35,29,88
-MilwaukeeWI,forested,natural regeneration,102,67,33,52
-MilwaukeeWI,forested,not sure,9,9,14,51
-MilwaukeeWI,forested,planted,30,14,19,112
-MinneapolisMN,forested,natural regeneration,70,34,29,46
-MinneapolisMN,forested,not sure,11,1,5,42
-MinneapolisMN,forested,planted,34,36,32,154
-PittsburghPA,forested,natural regeneration,196,145,108,257
+ChicagoIL,forested,planted,21,25,12,102
+ClevelandOH,forested,natural regeneration,48,35,22,65
+ClevelandOH,forested,not sure,6,2,2,16
+ClevelandOH,forested,planted,23,12,14,48
+DesMoinesIA,not forested,natural regeneration,110,82,55,171
+DesMoinesIA,not forested,not sure,2,2,1,33
+DesMoinesIA,not forested,planted,22,22,18,80
+DetroitMI,forested,natural regeneration,101,52,29,67
+DetroitMI,forested,not sure,6,4,7,27
+DetroitMI,forested,planted,8,9,14,75
+FargoND,not forested,natural regeneration,12,9,5,20
+FargoND,not forested,not sure,1,1,4,19
+FargoND,not forested,planted,28,13,16,70
+HoustonTX,not forested,natural regeneration,202,134,102,191
+HoustonTX,not forested,not sure,4,2,1,31
+HoustonTX,not forested,planted,31,24,14,93
+KansasCityMO,not forested,natural regeneration,251,193,129,255
+KansasCityMO,not forested,not sure,1,3,4,35
+KansasCityMO,not forested,planted,17,10,10,34
+LincolnNE,not forested,natural regeneration,75,50,31,77
+LincolnNE,not forested,not sure,5,3,1,17
+LincolnNE,not forested,planted,28,26,22,114
+MadisonWI,forested,natural regeneration,94,54,30,127
+MadisonWI,forested,not sure,6,4,2,19
+MadisonWI,forested,planted,46,39,30,104
+MilwaukeeWI,forested,natural regeneration,98,63,33,49
+MilwaukeeWI,forested,not sure,10,9,14,50
+MilwaukeeWI,forested,planted,25,14,18,110
+MinneapolisMN,forested,natural regeneration,60,30,28,44
+MinneapolisMN,forested,not sure,6,2,4,42
+MinneapolisMN,forested,planted,36,37,28,161
+PhiladelphiaPA,forested,natural regeneration,72,42,28,84
+PhiladelphiaPA,forested,not sure,2,1,3,7
+PhiladelphiaPA,forested,planted,12,12,13,69
+PittsburghPA,forested,natural regeneration,203,150,101,270
 PittsburghPA,forested,not sure,6,4,6,26
-PittsburghPA,forested,planted,22,22,24,49
-PortlandME,forested,natural regeneration,302,200,148,351
-PortlandME,forested,not sure,2,4,5,30
-PortlandME,forested,planted,23,24,14,70
-PortlandOR,forested,natural regeneration,64,66,54,258
+PittsburghPA,forested,planted,21,29,21,54
+PortlandME,forested,natural regeneration,304,216,153,374
+PortlandME,forested,not sure,2,3,6,27
+PortlandME,forested,planted,22,23,17,69
+PortlandOR,forested,natural regeneration,71,65,55,258
 PortlandOR,forested,not sure,13,7,7,44
-PortlandOR,forested,planted,100,38,24,97
-ProvidenceRI,forested,natural regeneration,71,42,36,102
+PortlandOR,forested,planted,95,38,22,102
+ProvidenceRI,forested,natural regeneration,77,40,37,103
 ProvidenceRI,forested,not sure,3,1,NA,19
-ProvidenceRI,forested,planted,28,19,27,85
+ProvidenceRI,forested,planted,31,18,31,88
 RochesterNY,forested,natural regeneration,119,69,44,214
 RochesterNY,forested,not sure,4,4,7,23
 RochesterNY,forested,planted,12,17,13,102
-SanAntonioTX,not forested,natural regeneration,294,210,136,207
+SanAntonioTX,not forested,natural regeneration,299,211,140,212
 SanAntonioTX,not forested,not sure,NA,1,NA,NA
-SanAntonioTX,not forested,planted,33,35,27,77
-SanDiegoCA,not forested,natural regeneration,43,10,10,17
-SanDiegoCA,not forested,planted,94,56,50,93
+SanAntonioTX,not forested,planted,34,38,28,81
+SanDiegoCA,not forested,natural regeneration,41,17,11,17
+SanDiegoCA,not forested,planted,97,61,48,101
 SpringfieldMO,forested,natural regeneration,100,96,55,121
 SpringfieldMO,forested,not sure,9,4,4,45
 SpringfieldMO,forested,planted,7,6,6,40
-StLouisMO,forested,natural regeneration,18,22,14,36
-StLouisMO,forested,not sure,6,5,2,30
-StLouisMO,forested,planted,25,27,13,67
-TrentonNJ,forested,natural regeneration,213,159,104,237
-TrentonNJ,forested,not sure,5,9,7,42
-TrentonNJ,forested,planted,28,14,21,85
-WashingtonDC,forested,natural regeneration,84,34,31,138
+StLouisMO,forested,natural regeneration,24,21,17,38
+StLouisMO,forested,not sure,6,5,2,29
+StLouisMO,forested,planted,30,28,15,64
+TrentonNJ,forested,natural regeneration,223,165,105,249
+TrentonNJ,forested,not sure,5,6,7,42
+TrentonNJ,forested,planted,33,19,19,93
+WashingtonDC,forested,natural regeneration,87,37,31,131
 WashingtonDC,forested,not sure,1,1,1,12
-WashingtonDC,forested,planted,57,61,36,95
+WashingtonDC,forested,planted,56,66,42,105
+WichitaKS,not forested,natural regeneration,115,57,49,82
+WichitaKS,not forested,not sure,2,1,1,16
+WichitaKS,not forested,planted,28,24,15,79

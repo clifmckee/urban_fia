@@ -1,23 +1,28 @@
 city,ecoregion1,ecoregion2,ecoregion3,Classification 1,Classification 2,Classification 3
+AustinTX,great plains,south central semiarid prairies,texas blackland prairies,Not Forested,Not Forested,Not Forested
+BaltimoreMD,eastern temperate forests,southeastern usa plains,northern piedmont,Forested,Forested,Forested
+BurlingtonVT,eastern temperate forests,mixed wood plains,eastern great lakes and hudson lowlands,Forested,Forested,Forested
 ChicagoIL,eastern temperate forests,central usa plains,central corn belt plains,Forested,Forested,Forested
+ClevelandOH,eastern temperate forests,mixed wood plains,eastern great lakes and hudson lowlands,Forested,Forested,Forested
+DesMoinesIA,great plains,temperate prairies,western corn belt plains,Not Forested,Not Forested,Not Forested
+DetroitMI,eastern temperate forests,central usa plains,huron/erie lake plains,Forested,Forested,Forested
+FargoND,great plains,temperate prairies,lake agassiz plain,Not Forested,Not Forested,Not Forested
+HoustonTX,great plains,texas-louisiana coastal plain,western gulf coastal plain,Not Forested,Not Forested,Not Forested
+KansasCityMO,great plains,temperate prairies,western corn belt plains,Not Forested,Not Forested,Not Forested
+LincolnNE,great plains,temperate prairies,western corn belt plains,Not Forested,Not Forested,Not Forested
 MadisonWI,eastern temperate forests,central usa plains,southeastern wisconsin till plains,Forested,Forested,Forested
 MilwaukeeWI,eastern temperate forests,central usa plains,southeastern wisconsin till plains,Forested,Forested,Forested
-TrentonNJ,eastern temperate forests,mississippi alluvial and southeast usa coastal plains,atlantic coastal pine barrens,Forested,Forested,Forested
-BurlingtonVT,eastern temperate forests,mixed wood plains,eastern great lakes and hudson lowlands,Forested,Forested,Forested
-ClevelandOH,eastern temperate forests,mixed wood plains,eastern great lakes and hudson lowlands,Forested,Forested,Forested
-RochesterNY,eastern temperate forests,mixed wood plains,eastern great lakes and hudson lowlands,Forested,Forested,Forested
 MinneapolisMN,eastern temperate forests,mixed wood plains,north central hardwood forests,Forested,Forested,Forested
-PortlandME,eastern temperate forests,mixed wood plains,northeastern coastal zone,Forested,Forested,Forested
-ProvidenceRI,eastern temperate forests,mixed wood plains,northeastern coastal zone,Forested,Forested,Forested
-SpringfieldMO,eastern temperate forests,ozark/ouachita-appalachian forests,ozark highlands,Forested,Forested,Forested
+PhiladelphiaPA,eastern temperate forests,southeastern usa plains,northern piedmont,Forested,Forested,Forested
 PittsburghPA,eastern temperate forests,ozark/ouachita-appalachian forests,western allegheny plateau,Forested,Forested,Forested
-StLouisMO,eastern temperate forests,southeastern usa plains,interior river valleys and hills,Forested,Forested,Forested
-BaltimoreMD,eastern temperate forests,southeastern usa plains,northern piedmont,Forested,Forested,Forested
-WashingtonDC,eastern temperate forests,southeastern usa plains,northern piedmont,Forested,Forested,Forested
-AustinTX,great plains,south central semiarid prairies,texas blackland prairies,Not Forested,Not Forested,Not Forested
-SanAntonioTX,great plains,south central semiarid prairies,texas blackland prairies,Not Forested,Not Forested,Not Forested
-DesMoinesIA,great plains,temperate prairies,western corn belt plains,Not Forested,Not Forested,Not Forested
-KansasCityMO,great plains,temperate prairies,western corn belt plains,Not Forested,Not Forested,Not Forested
-HoustonTX,great plains,texas-louisiana coastal plain,western gulf coastal plain,Not Forested,Not Forested,Not Forested
+PortlandME,eastern temperate forests,mixed wood plains,northeastern coastal zone,Forested,Forested,Forested
 PortlandOR,marine west coast forest,marine west coast forest,willamette valley,Forested,Forested,Forested
+ProvidenceRI,eastern temperate forests,mixed wood plains,northeastern coastal zone,Forested,Forested,Forested
+RochesterNY,eastern temperate forests,mixed wood plains,eastern great lakes and hudson lowlands,Forested,Forested,Forested
+SanAntonioTX,great plains,south central semiarid prairies,texas blackland prairies,Not Forested,Not Forested,Not Forested
 SanDiegoCA,mediterranean california,mediterranean california,"california coastal sage, chaparral, and oak woodlands",Not Forested,Not Forested,Not Forested
+SpringfieldMO,eastern temperate forests,ozark/ouachita-appalachian forests,ozark highlands,Forested,Forested,Forested
+StLouisMO,eastern temperate forests,southeastern usa plains,interior river valleys and hills,Forested,Forested,Forested
+TrentonNJ,eastern temperate forests,mississippi alluvial and southeast usa coastal plains,atlantic coastal pine barrens,Forested,Forested,Forested
+WashingtonDC,eastern temperate forests,southeastern usa plains,northern piedmont,Forested,Forested,Forested
+WichitaKS,great plains,south central semiarid prairies,central great plains,Not Forested,Not Forested,Not Forested
