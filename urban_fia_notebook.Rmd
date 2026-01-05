@@ -1,6 +1,6 @@
 ---
 title: "Urban FIA community ecology analysis"
-author: "Clifton McKee"
+author: "Clifton McKee, Meghan Avolio started editing 1/5/26"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -26,6 +26,7 @@ library(vegan)
 library(ggrepel)
 library(iNEXT)
 library(codyn)
+library(gridExtra)
 
 # Useful functions
 "%ni%" <- Negate("%in%")
@@ -486,19 +487,21 @@ planted_trees_table <- trees_coords_merge %>%
   inner_join(y = city_ecoreg) %>% 
   group_by(city) %>% 
   mutate(proportion = round(n/sum(n), 2))
-planted_trees_table %>% 
+
+Fig2B<-planted_trees_table %>% 
   ggplot() +
-  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-               y = n,
+  geom_col(aes(x = reorder(city, population, decreasing = FALSE),
+               y = proportion,
                fill = planted_def),
            position = "stack") +
   scale_fill_viridis_d(name = "Planted", option = "D") +
   labs(x = "City (ordered by longitude)", y = "Planted status of trees") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom") +
-  facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
-ggsave("Results/planted_trees.pdf", height = 5, width = 7)
+        legend.position = "bottom") #+
+  #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
+ggsave("Results/planted_trees_prop.pdf", height = 5, width = 7)
+
 
 # Table
 planted_trees_table %>% 
@@ -1479,20 +1482,21 @@ total_public <- live_trees %>%
   group_by(city, own2) %>% 
   count() %>%
   inner_join(y = tree_city_merge) %>%
-  inner_join(y = city_ecoreg)
+  inner_join(y = city_ecoreg) %>% 
+  group_by(city) %>% 
+  mutate(prop_trees=n/sum(n))
   
 # Plot total trees by ownership type
-total_public %>% 
+Fig2D<-total_public %>% 
   ggplot() +
-  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-               y = n, fill = own2),
-           position = "dodge") +
+  geom_col(aes(x = reorder(city, population, decreasing = FALSE),
+               y = prop_trees, fill = own2)) +
   scale_fill_manual(name = "Ownership", values = c("black", "grey50")) +
   labs(x = "City (ordered by longitude)", y = "Total trees") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom") +
-  facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
+        legend.position = "bottom") #+
+  #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
 ggsave("Results/total_trees_public_v_private.pdf", height = 5, width = 7)
 
 # Table
@@ -1513,20 +1517,20 @@ basal_public <- live_trees %>%
   group_by(city, own2) %>% 
   summarize(total_basal = sum(basal_area, na.rm = TRUE)) %>% 
   inner_join(y = tree_city_merge) %>%
-  inner_join(y = city_ecoreg)
+  inner_join(y = city_ecoreg)%>% 
+  mutate(prop_basal=total_basal/sum(total_basal))
   
 # Plot total basal area by ownership type
-basal_public %>% 
+Fig2C<-basal_public %>% 
   ggplot() +
-  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-               y = total_basal, fill = own2),
-           position = "dodge") +
+  geom_col(aes(x = reorder(city, population, decreasing = FALSE),
+               y = prop_basal, fill = own2)) +
   scale_fill_manual(name = "Ownership", values = c("black", "grey50")) +
   labs(x = "City (ordered by longitude)", y = "Basal area (square meters)") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom") +
-  facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
+        legend.position = "bottom") #+
+  #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
 ggsave("Results/basal_area_public_v_private.pdf", height = 5, width = 7)
 
 # Table
@@ -1838,21 +1842,22 @@ basal_planted <- live_trees %>%
   group_by(city, planted_def) %>% 
   summarize(total_basal = sum(basal_area, na.rm = TRUE)) %>% 
   inner_join(y = tree_city_merge) %>%
-  inner_join(y = city_ecoreg)
+  inner_join(y = city_ecoreg) %>% 
+  group_by(city) %>% 
+  mutate(basal_prop = total_basal/sum(total_basal))
   
 # Plot total basal area by planted status
-basal_planted %>% 
+Fig2A<-basal_planted %>% 
   filter(planted_def != "not sure") %>% 
   ggplot() +
-  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-               y = total_basal, fill = planted_def),
-           position = "dodge") +
-  scale_fill_manual(name = "Planted", values = c("black", "grey50")) +
+  geom_col(aes(x = reorder(city, population, decreasing = FALSE),
+               y = basal_prop, fill = planted_def)) +
+  scale_fill_viridis_d(name = "Planted", option = "D") +
   labs(x = "City (ordered by longitude)", y = "Basal area (square meters)") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom") +
-  facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
+        legend.position = "bottom") #+
+  #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
 ggsave("Results/basal_area_planted_v_not_planted.pdf", height = 5, width = 7)
 
 # Table
