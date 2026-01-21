@@ -117,6 +117,11 @@ trees_coords_merge <- full_join(x = live_trees,
                              by = c("city" = "camelname")) %>% 
   mutate(OWNGRPCD = case_when(OWNGRPCD == "Unknown water" ~ "Water",
                               TRUE ~ OWNGRPCD))
+
+
+# climate data
+climate<-read_csv("Data/city_climate.csv")
+
 ```
 
 ### City profiles {.tabset}
@@ -580,6 +585,12 @@ tree_community_plots <- live_trees %>%
   pivot_wider(names_from = scientific, values_from = count) %>% 
   replace(is.na(.), 0)
 
+tree_community_plots_all <- live_trees %>% 
+  group_by(city, PLOTID, scientific) %>% 
+  summarize(count = n()) %>% 
+  pivot_wider(names_from = scientific, values_from = count) %>% 
+  replace(is.na(.), 0)
+
 # Calculate species accumulation curves across cities
 poolaccum_fun <- function(df, city, nperm, measure) {
   set.seed(20250527)
@@ -680,12 +691,14 @@ pooled_accum <- with(tree_community_plots[, c(1, 2)],
          chao.est = chao,
          jack1.est = jack1,
          jack2.est = jack2,
-         boot.est = boot)
+         boot.est = boot)%>% 
+  left_join(climate)
+
 pooled_accum_long <- pooled_accum %>% 
   pivot_longer(Species.est:boot.se,
                names_to = c("estimate", "measure"), names_sep = "\\.",
                values_to = "value") %>% 
-  pivot_wider(names_from = measure, values_from = value)
+  pivot_wider(names_from = measure, values_from = value) 
 
 # Plot extrapolated species richness indices by city
 pooled_accum_long %>% 
@@ -702,7 +715,88 @@ pooled_accum_long %>%
 pooled_accum %>% 
   kable(digits = 1)
 write_csv(pooled_accum, "Results/pooled_species_richness.csv")
+
+#pairs plot
+pairs(pooled_accum[,2:9])
+
+#plot with climate
+ggplot(data=pooled_accum, aes(x=MAP_mm, y=jack1.est))+
+  geom_point()+
+  geom_errorbar(aes(ymin=jack1.est-jack1.se, ymax = jack1.est+jack1.se))
+ggplot(data=pooled_accum, aes(x=Tmin_C, y=chao.est))+
+  geom_point()
 ```
+###rarified richness (sampling same number of plots)
+
+```{r rarifeid richness specaccum}
+
+#code from co-pilot
+
+# split into a named list of community matrices
+city_mats <- split(tree_community_plots[, -c(1,2)], tree_community_plots$city) 
+
+#run specaccum for each city seperately
+accum_list <- lapply(city_mats, function(mat) {
+  specaccum(mat, method = "random", permutations = 999)
+})
+
+#only plots with trees are included here, so the minplots does not work because this is all plots
+minplots<-min(tree_city_merge$plot_count_Curr)
+min_sites <- min(sapply(city_mats, nrow))
+
+# pull out richness at 56 plots for all cities
+#okay, we think maybe we want to rarefy by species, this seems so low
+
+
+extract_vals <- function(acc, min_sites) {
+  idx <- which(acc$sites == min_sites)
+  data.frame(
+    rrichness = acc$richness[idx],
+    SD       = acc$sd[idx],
+    Lower95  = acc$richness[idx] - 1.96 * acc$sd[idx],
+    Upper95  = acc$richness[idx] + 1.96 * acc$sd[idx]
+  )
+}
+
+df_rarified <- do.call(rbind,
+  lapply(names(accum_list), function(city) {
+    out <- extract_vals(accum_list[[city]], min_sites)
+    out$city <- city
+    out
+  })
+) 
+
+#compare rarefied vs extrapolated
+
+rich_explore<-df_rarified %>% 
+  left_join(pooled_accum, by='city') %>% 
+  left_join(climate)
+
+plot(rich_explore$rrichness, rich_explore$chao.est)
+
+comparePlot<-rich_explore %>% 
+  select(city, MAP_mm, Tmin_C, rrichness, chao.est, SD, chao.se) %>% 
+  pivot_longer(names_to='rich_est', values_to='rich_val', rrichness:chao.est) %>% 
+  pivot_longer(names_to='rich_err', values_to = 'err_val', SD:chao.se) %>% 
+  mutate(drop=ifelse(rich_est=="rrichness"&rich_err=='chao.se', 1, 
+                     ifelse(rich_est=='chao.est'&rich_err=='SD', 1, 0))) %>% 
+  filter(drop==0)
+
+ggplot(data=comparePlot, aes(x=Tmin_C, y=rich_val, color=rich_est))+
+  geom_point()+
+  geom_errorbar(aes(ymin=rich_val-err_val, ymax = rich_val+err_val))+
+  facet_grid(~rich_est)+
+  geom_smooth(method = 'lm')
+
+ggplot(data=comparePlot, aes(x=MAP_mm, y=rich_val, color=rich_est))+
+  geom_point()+
+  geom_errorbar(aes(ymin=rich_val-err_val, ymax = rich_val+err_val))+
+  facet_grid(~rich_est)+
+  geom_smooth(method = 'lm')
+
+```
+
+
 
 #### Species richness (codyn)
 
@@ -738,6 +832,21 @@ city_diversity %>%
   kable()
 write_csv(city_diversity, "Results/city_diversity.csv")
 ```
+
+####comparing all ways of doing richness
+```{r rich compare}
+
+rich_compare<-df_rarified %>% 
+  left_join(pooled_accum, by='city') %>% 
+  left_join(city_diversity, by='city') %>% 
+  select(city, richness, rrichness, chao.est, jack1.est, SD, chao.se, jack1.se)
+
+pairs(rich_compare[,2:5])
+
+```
+
+
+
 
 #### Species evenness (codyn: Evar)
 
