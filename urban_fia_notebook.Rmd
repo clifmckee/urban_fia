@@ -794,7 +794,24 @@ ggplot(data=comparePlot, aes(x=MAP_mm, y=rich_val, color=rich_est))+
   facet_grid(~rich_est)+
   geom_smooth(method = 'lm')
 
+
+
+ggplot(data=rich_explore, aes(x=Tmin_C, y=rrichness))+
+  geom_point()+
+  geom_errorbar(aes(ymin=rrichness-SD, ymax = rrichness+SD))+
+  geom_smooth(method = 'lm')
+
+ggsave("Results/rrich_Temp.pdf", height = 5, width = 7)
+
+ggplot(data=rich_explore, aes(x=MAP_mm, y=rrichness))+
+   geom_point()+
+  geom_errorbar(aes(ymin=rrichness-SD, ymax = rrichness+SD))+
+  geom_smooth(method = 'lm')
+
+ggsave("Results/rrich_MAP.pdf", height = 5, width = 7)
 ```
+
+
 
 
 
