@@ -339,7 +339,24 @@ trees_coords_merge %>%
 
 ```{r land-ownership-trees}
 # Plot the proportion of city trees by ownership
-trees_coords_merge %>% 
+fig2a<-trees_coords_merge %>% 
+  group_by(city, lat, lng, OWNGRPCD) %>% 
+  summarize(n = n()) %>% 
+  ggplot() +
+  geom_bar(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = n,
+               fill = OWNGRPCD),
+           position = "fill", stat = 'identity') +
+  scale_fill_viridis_d(name = "Ownership", option = "H") +
+  labs(x = "City (ordered by longitude)", y = "Proportion of city trees") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave("Results/prop_trees_ownership.pdf", height = 5, width = 7)
+
+
+# Plot the proportion of city trees by ownership on forested land only
+fig2b<-trees_coords_merge %>% 
+  filter(FIA_LANDUSE %in% c('Forest land', "Rangeland/Chaparral"))%>% 
   group_by(city, lat, lng, OWNGRPCD) %>% 
   summarize(n = n()) %>% 
   ggplot() +
@@ -347,10 +364,12 @@ trees_coords_merge %>%
                y = n,
                fill = OWNGRPCD),
            position = "fill") +
-  scale_fill_viridis_d(name = "Ownership", option = "H") +
-  labs(x = "City (ordered by longitude)", y = "Proportion of city trees") +
+  scale_fill_manual(name = "Ownership", values=c('midnightblue', 'aquamarine2', 'darkgoldenrod1')) +
+  labs(x = "City (ordered by longitude)", y = "Proportion of city trees in Forested Areas") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave("Results/prop_trees_ownership_forestsubset.pdf", height = 5, width = 7)
+
 
 # City plots with trees by ownership table
 trees_coords_merge %>% 
@@ -362,7 +381,130 @@ trees_coords_merge %>%
   kable()
 ```
 
-#### Land use type of city land aea
+#### Number of planted trees
+
+```{r planted-trees}
+# What number of trees in each city are planted?
+planted_trees_table <- trees_coords_merge %>% 
+  mutate(IS_PLANTED = case_when(is.na(IS_PLANTED) & 
+                                  FIA_LANDUSE == "Forest land" ~ 2,
+                                TRUE ~ IS_PLANTED),
+         planted_def = case_when(IS_PLANTED == 1 ~ "planted",
+                                 IS_PLANTED == 2 ~ "natural regeneration",
+                                 IS_PLANTED == 3 ~ "not sure")) %>% 
+  group_by(city, planted_def) %>% 
+  summarize(n = n(), .groups = "drop") %>% 
+  inner_join(y = tree_city_merge) %>% 
+  inner_join(y = city_ecoreg) %>% 
+  group_by(city) %>% 
+  mutate(proportion = round(n/sum(n), 2))
+
+Fig2c<-planted_trees_table %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = proportion,
+               fill = planted_def),
+           position = "stack") +
+  scale_fill_viridis_d(name = "Planted", option = "D") +
+  labs(x = "City (ordered by longitude)", y = "Planted status of trees") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom") #+
+  #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
+ggsave("Results/planted_trees_prop.pdf", height = 5, width = 7)
+
+fig2<-grid.arrange(fig2a, fig2b, Fig2c, nrows=3)#why is this not working
+
+# Table
+planted_trees_table %>% 
+  select(city, classification_3, planted_def, n) %>% 
+  kable()
+write_csv(planted_trees_table, "Results/planted_trees_table.csv")
+```
+#### Ownership of live trees BASAL AREA
+
+```{r land-ownership-trees}
+# Plot the proportion of city trees by ownership
+trees_coords_merge %>%   
+  mutate(basal_area = 0.00064516*pi*(DIA/2)^2) %>% 
+  group_by(city, lat, lng, OWNGRPCD) %>% 
+  summarize(sumBA = sum(basal_area)) %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = sumBA,
+               fill = OWNGRPCD),
+           position = "fill") +
+  scale_fill_viridis_d(name = "Ownership", option = "H") +
+  labs(x = "City (ordered by longitude)", y = "Proportion of city trees basal area") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave("Results/prop_trees_ownership_BasalArea.pdf", height = 5, width = 7)
+
+
+# Plot the proportion of city trees by ownership on forested land only
+fig2b<-trees_coords_merge %>% 
+  filter(FIA_LANDUSE %in% c('Forest land', "Rangeland/Chaparral"))%>%
+   mutate(basal_area = 0.00064516*pi*(DIA/2)^2) %>% 
+  group_by(city, lat, lng, OWNGRPCD) %>% 
+  summarize(sumBA = sum(basal_area)) %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = sumBA,
+               fill = OWNGRPCD),
+           position = "fill") +
+  scale_fill_manual(name = "Ownership", values=c('midnightblue', 'aquamarine2', 'darkgoldenrod1')) +
+  labs(x = "City (ordered by longitude)", y = "Proportion of city trees basal area in Forested Areas") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggsave("Results/prop_trees_ownership_forestsubset_BasalArea.pdf", height = 5, width = 7)
+
+
+# City plots with trees by ownership table
+trees_coords_merge %>% 
+  group_by(city, lat, lng, OWNGRPCD) %>% 
+  summarize(n = n(), .groups = "drop") %>% 
+  pivot_wider(names_from = OWNGRPCD,
+              values_from = n) %>% 
+  select(-lat, -lng) %>% 
+  kable()
+```
+
+#### Number of planted trees BASAL area
+
+```{r planted-trees}
+# What basal area of trees in each city are planted?
+planted_trees_tableBA <- trees_coords_merge %>% 
+   mutate(basal_area = 0.00064516*pi*(DIA/2)^2) %>% 
+  mutate(IS_PLANTED = case_when(is.na(IS_PLANTED) & 
+                                  FIA_LANDUSE == "Forest land" ~ 2,
+                                TRUE ~ IS_PLANTED),
+         planted_def = case_when(IS_PLANTED == 1 ~ "planted",
+                                 IS_PLANTED == 2 ~ "natural regeneration",
+                                 IS_PLANTED == 3 ~ "not sure")) %>% 
+  group_by(city, planted_def) %>% 
+  summarize(sumBA = sum(basal_area), .groups = "drop") %>% 
+  inner_join(y = tree_city_merge) %>% 
+  inner_join(y = city_ecoreg) %>% 
+  group_by(city) %>% 
+  mutate(proportion = round(sumBA/sum(sumBA), 2))
+
+planted_trees_tableBA %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = proportion,
+               fill = planted_def),
+           position = "stack") +
+  scale_fill_viridis_d(name = "Planted", option = "D") +
+  labs(x = "City (ordered by longitude)", y = "Planted status of trees Basal area") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom") #+
+  #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
+ggsave("Results/planted_trees_prop_BA.pdf", height = 5, width = 7)
+```
+
+
+#### Land use type of city land area
 
 ```{r land-use-area}
 # Plot the proportion of city acreage by landuse type
@@ -475,45 +617,7 @@ trees_coords_merge %>%
   kable()
 ```
 
-#### Number of planted trees
 
-```{r planted-trees}
-# What number of trees in each city are planted?
-planted_trees_table <- trees_coords_merge %>% 
-  mutate(IS_PLANTED = case_when(is.na(IS_PLANTED) & 
-                                  FIA_LANDUSE == "Forest land" ~ 2,
-                                TRUE ~ IS_PLANTED),
-         planted_def = case_when(IS_PLANTED == 1 ~ "planted",
-                                 IS_PLANTED == 2 ~ "natural regeneration",
-                                 IS_PLANTED == 3 ~ "not sure")) %>% 
-  group_by(city, planted_def) %>% 
-  summarize(n = n(), .groups = "drop") %>% 
-  inner_join(y = tree_city_merge) %>% 
-  inner_join(y = city_ecoreg) %>% 
-  group_by(city) %>% 
-  mutate(proportion = round(n/sum(n), 2))
-
-Fig2B<-planted_trees_table %>% 
-  ggplot() +
-  geom_col(aes(x = reorder(city, population, decreasing = FALSE),
-               y = proportion,
-               fill = planted_def),
-           position = "stack") +
-  scale_fill_viridis_d(name = "Planted", option = "D") +
-  labs(x = "City (ordered by longitude)", y = "Planted status of trees") +
-  theme_bw(base_size = 10) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom") #+
-  #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
-ggsave("Results/planted_trees_prop.pdf", height = 5, width = 7)
-
-
-# Table
-planted_trees_table %>% 
-  select(city, classification_3, planted_def, n) %>% 
-  kable()
-write_csv(planted_trees_table, "Results/planted_trees_table.csv")
-```
 
 #### Ecoregions I of cities
 
@@ -575,7 +679,7 @@ city_ecoreg %>%
 
 ### City diversity {.tabset}
 
-#### Species accumulation curves
+#### Species accumulation curves - 
 
 ```{r species-accumulation}
 # Convert tree data to community dataset, pooled by plots within city
@@ -856,13 +960,93 @@ write_csv(city_diversity, "Results/city_diversity.csv")
 rich_compare<-df_rarified %>% 
   left_join(pooled_accum, by='city') %>% 
   left_join(city_diversity, by='city') %>% 
-  select(city, richness, rrichness, chao.est, jack1.est, SD, chao.se, jack1.se)
+  select(city, richness, rrichness, chao.est, jack1.est, SD, chao.se, jack1.se) %>% 
+  rename(ObservedRichness=richness,
+         RarefiedRichnes=rrichness,
+         ChaoEstimated=chao.est,
+         JacknifedEstimated=jack1.est)
+
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...){
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y)
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste0(prefix, txt)
+  if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+  test <- cor.test(x,y) 
+  Signif <- symnum(test$p.value, corr = FALSE, na = FALSE, 
+                   cutpoints = c(0, 0.001, 1),
+                   symbols = c("*", " "))
+  
+  
+  text(0.5, 0.5, txt, cex = 2)
+  text(0.8, 0.5, Signif, cex=5, col="red")
+}
+
+panel.hist <- function(x, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(usr[1:2], 0, 1.5) )
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, ...)
+}
+
 
 pairs(rich_compare[,2:5])
+pairs(rich_compare[,2:5], upper.panel = panel.cor,diag.panel = panel.hist, cex.axis = 2)
 
 ```
 
+##### Species Richness (rarefied by ownership and planted)
 
+
+```{r sp-richness_analyses}
+#need to find plot data and make public/private columns and merge with city, same for planted, not planted
+
+tree_community_plots_subsets<-tree_community_plots_subsets %>% 
+  mutate(cityOwnership)
+
+#code from co-pilot
+
+# split into a named list of community matrices
+city_mats <- split(tree_community_plots[, -c(1,2)], tree_community_plots$city) 
+
+#run specaccum for each city seperately
+accum_list <- lapply(city_mats, function(mat) {
+  specaccum(mat, method = "random", permutations = 999)
+})
+
+#only plots with trees are included here, so the minplots does not work because this is all plots
+minplots<-min(tree_city_merge$plot_count_Curr)
+min_sites <- min(sapply(city_mats, nrow))
+
+# pull out richness at 56 plots for all cities
+#okay, we think maybe we want to rarefy by species, this seems so low
+
+
+extract_vals <- function(acc, min_sites) {
+  idx <- which(acc$sites == min_sites)
+  data.frame(
+    rrichness = acc$richness[idx],
+    SD       = acc$sd[idx],
+    Lower95  = acc$richness[idx] - 1.96 * acc$sd[idx],
+    Upper95  = acc$richness[idx] + 1.96 * acc$sd[idx]
+  )
+}
+
+df_rarified <- do.call(rbind,
+  lapply(names(accum_list), function(city) {
+    out <- extract_vals(accum_list[[city]], min_sites)
+    out$city <- city
+    out
+  })
+) 
+
+
+
+```
 
 
 #### Species evenness (codyn: Evar)
@@ -1200,30 +1384,6 @@ city_plots_merge %>%
   filter(FIA_LANDUSE %in% c("Forest land", "Rangeland/Chaparral")) %>% 
   group_by(city) %>% 
   summarize(n = n_distinct(PLOTID), .groups = "drop") %>% 
-  inner_join(y = tree_city_merge) %>% 
-  select(city, city_acres, n) %>% 
-  kable()
-```
-
-#### Number of live trees in forest by total land area
-
-```{r land-area-forest-trees}
-# Does the number of forest trees scale with total city size?
-trees_coords_merge %>% 
-  filter(FIA_LANDUSE %in% c("Forest land", "Rangeland/Chaparral")) %>% 
-  group_by(city) %>% 
-  summarize(n = n(), .groups = "drop") %>% 
-  inner_join(y = tree_city_merge) %>% 
-  ggplot(aes(x = city_acres, y = n)) +
-  geom_point() +
-  labs(x = "City land area", y = "Natural land trees\n(forest, rangeland, and chaparral)") +
-  theme_bw(base_size = 10)
-
-# Table
-trees_coords_merge %>% 
-  filter(FIA_LANDUSE %in% c("Forest land", "Rangeland/Chaparral")) %>% 
-  group_by(city) %>% 
-  summarize(n = n(), .groups = "drop") %>% 
   inner_join(y = tree_city_merge) %>% 
   select(city, city_acres, n) %>% 
   kable()
