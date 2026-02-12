@@ -1367,7 +1367,7 @@ ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=MAP_mm, y=
 c<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=MAP_mm, y=div, colour = planted))+
   geom_point()+
   geom_smooth(method = 'lm')+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
   ylab('Rarefied Richness')+
   xlab('MAP (mm)')+
   scale_color_manual(name='', values=c('blue2', 'darkgreen'))
@@ -1379,8 +1379,16 @@ ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=Tmin_C, y=
 
 d<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=Tmin_C, y=div, colour = planted))+
   geom_point()+
-  geom_smooth(method = 'lm')
+  geom_smooth(method = 'lm')+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
+  ylab('Rarefied Richness')+
+  xlab('MAT (C)')+
+  scale_color_manual(name='', values=c('blue2', 'darkgreen'))
+d
 
+climatefig<-grid.arrange(c,d, nrow=1)
+
+ggsave("Results/richess_climate.pdf", climatefig, height = 5, width = 7)
 
 ```
 
