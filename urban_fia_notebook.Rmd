@@ -999,50 +999,332 @@ pairs(rich_compare[,2:5], upper.panel = panel.cor,diag.panel = panel.hist, cex.a
 
 ```
 
-##### Species Richness (rarefied by ownership and planted)
+##### Species Richness, Evenness, and Beta (rarefied by ownership and planted)
 
 
 ```{r sp-richness_analyses}
 #need to find plot data and make public/private columns and merge with city, same for planted, not planted
 
-tree_community_plots_subsets<-tree_community_plots_subsets %>% 
-  mutate(cityOwnership)
+tree_community_plots_public <- live_trees %>% 
+  filter(OWNGRPCD %in% c('OtherFederal','StateLocal')) %>% 
+  group_by(city, PLOTID, scientific) %>% 
+  summarize(count = n()) %>% 
+  pivot_wider(names_from = scientific, values_from = count, values_fill = 0)
+
+tree_community_plots_private <- live_trees %>% 
+  filter(OWNGRPCD %in% c('Private')) %>% 
+  group_by(city, PLOTID, scientific) %>% 
+  summarize(count = n()) %>% 
+  pivot_wider(names_from = scientific, values_from = count, values_fill = 0)
+
+tree_community_plots_planted <- live_trees %>% 
+  filter(IS_PLANTED==1) %>% 
+  group_by(city, PLOTID, scientific) %>% 
+  summarize(count = n()) %>% 
+  pivot_wider(names_from = scientific, values_from = count, values_fill = 0)
+
+tree_community_plots_spont <- live_trees %>% 
+  filter(IS_PLANTED==2) %>% 
+  group_by(city, PLOTID, scientific) %>% 
+  summarize(count = n()) %>% 
+  pivot_wider(names_from = scientific, values_from = count, values_fill = 0)
+
 
 #code from co-pilot
 
 # split into a named list of community matrices
-city_mats <- split(tree_community_plots[, -c(1,2)], tree_community_plots$city) 
+city_mats <- split(tree_community_plots_planted[, -c(1,2)], tree_community_plots_planted$city) 
 
 #run specaccum for each city seperately
 accum_list <- lapply(city_mats, function(mat) {
   specaccum(mat, method = "random", permutations = 999)
 })
-
-#only plots with trees are included here, so the minplots does not work because this is all plots
-minplots<-min(tree_city_merge$plot_count_Curr)
+#get min sites
 min_sites <- min(sapply(city_mats, nrow))
-
-# pull out richness at 56 plots for all cities
-#okay, we think maybe we want to rarefy by species, this seems so low
-
-
+#extract for this min site for all cities
 extract_vals <- function(acc, min_sites) {
   idx <- which(acc$sites == min_sites)
   data.frame(
-    rrichness = acc$richness[idx],
-    SD       = acc$sd[idx],
-    Lower95  = acc$richness[idx] - 1.96 * acc$sd[idx],
-    Upper95  = acc$richness[idx] + 1.96 * acc$sd[idx]
-  )
+    rrich_planted = acc$richness[idx])
 }
 
-df_rarified <- do.call(rbind,
+rare_planted <- do.call(rbind,
   lapply(names(accum_list), function(city) {
     out <- extract_vals(accum_list[[city]], min_sites)
     out$city <- city
     out
   })
 ) 
+
+rare_planted <-rare_planted %>% 
+  mutate(metric='rarefied richness',
+        planted='planted') %>% 
+  rename(div=rrich_planted)
+
+
+# split into a named list of community matrices
+city_mats <- split(tree_community_plots_spont[, -c(1,2)], tree_community_plots_spont$city) 
+
+#run specaccum for each city seperately
+accum_list <- lapply(city_mats, function(mat) {
+  specaccum(mat, method = "random", permutations = 999)
+})
+#get min sites
+min_sites <- min(sapply(city_mats, nrow))
+#extract for this min site for all cities
+extract_vals <- function(acc, min_sites) {
+  idx <- which(acc$sites == min_sites)
+  data.frame(
+    rrich_spont = acc$richness[idx])
+}
+
+rare_spont <- do.call(rbind,
+  lapply(names(accum_list), function(city) {
+    out <- extract_vals(accum_list[[city]], min_sites)
+    out$city <- city
+    out
+  })
+) 
+rare_spont <-rare_spont %>% 
+  mutate(metric='rarefied richness',
+        planted='spontaneous')%>% 
+  rename(div=rrich_spont)
+
+
+city_mats <- split(tree_community_plots_public[, -c(1,2)], tree_community_plots_public$city) 
+
+#run specaccum for each city seperately
+accum_list <- lapply(city_mats, function(mat) {
+  specaccum(mat, method = "random", permutations = 999)
+})
+#get min sites
+min_sites <- min(sapply(city_mats, nrow))
+#extract for this min site for all cities
+extract_vals <- function(acc, min_sites) {
+  idx <- which(acc$sites == min_sites)
+  data.frame(
+    rrich_public = acc$richness[idx])
+}
+
+rare_public <- do.call(rbind,
+  lapply(names(accum_list), function(city) {
+    out <- extract_vals(accum_list[[city]], min_sites)
+    out$city <- city
+    out
+  })
+) 
+rare_public <-rare_public %>% 
+  mutate(metric='rarefied richness',
+        ownership='public')%>% 
+  rename(div=rrich_public)
+
+city_mats <- split(tree_community_plots_private[, -c(1,2)], tree_community_plots_private$city) 
+
+#run specaccum for each city seperately
+accum_list <- lapply(city_mats, function(mat) {
+  specaccum(mat, method = "random", permutations = 999)
+})
+#get min sites
+min_sites <- min(sapply(city_mats, nrow))
+#extract for this min site for all cities
+extract_vals <- function(acc, min_sites) {
+  idx <- which(acc$sites == min_sites)
+  data.frame(
+    rrich_private = acc$richness[idx])
+}
+
+rare_private <- do.call(rbind,
+  lapply(names(accum_list), function(city) {
+    out <- extract_vals(accum_list[[city]], min_sites)
+    out$city <- city
+    out
+  })
+) 
+rare_private <-rare_private %>% 
+  mutate(metric='rarefied richness',
+        ownership='private')%>% 
+  rename(div=rrich_private)
+
+
+####evenneess
+cities_abund_public <- live_trees %>% 
+    filter(OWNGRPCD %in% c('OtherFederal','StateLocal')) %>% 
+  group_by(city, scientific) %>% 
+  count()
+
+cities_abund_private <- live_trees %>% 
+    filter(OWNGRPCD %in% c('Private')) %>% 
+  group_by(city, scientific) %>% 
+  count()
+
+cities_abund_planted <- live_trees %>% 
+    filter(IS_PLANTED == 1) %>% 
+  group_by(city, scientific) %>% 
+  count()
+
+cities_abund_spont <- live_trees %>% 
+    filter(IS_PLANTED == 2) %>% 
+  group_by(city, scientific) %>% 
+  count()
+
+# Richness and evenness, run for each dataset
+even_planted <- community_structure(cities_abund_planted,
+                    replicate.var = "city",
+                    abundance.var = "n",
+                    metric = "Evar") %>% 
+  rename(div=Evar) %>% 
+  select(-richness) %>% 
+  mutate(metric='evenness', planted='planted')
+even_spont <- community_structure(cities_abund_spont,
+                    replicate.var = "city",
+                    abundance.var = "n",
+                    metric = "Evar") %>% 
+  rename(div=Evar)%>% 
+  select(-richness) %>% 
+  mutate(metric='evenness', planted='spontaneous')
+even_public <- community_structure(cities_abund_public,
+                    replicate.var = "city",
+                    abundance.var = "n",
+                    metric = "Evar") %>% 
+  rename(div=Evar)%>% 
+  select(-richness) %>% 
+  mutate(metric='evenness', ownership='public')
+
+even_private <- community_structure(cities_abund_private,
+                    replicate.var = "city",
+                    abundance.var = "n",
+                    metric = "Evar") %>% 
+  rename(div=Evar)%>% 
+  select(-richness) %>% 
+  mutate(metric='evenness', ownership='private')
+
+
+##beta diversity as measured by BC dissim
+city_list<-unique(live_trees$city)
+
+beta_private<-data.frame()
+for (i in 1:length(city_list)){
+  
+  subset<-tree_community_plots_private %>% 
+    filter(city==city_list[i])
+  
+  bc<-mean(vegdist(subset[,-c(1,2)], methods='bray', upper=F, diag = F))
+  
+  df<-data.frame(city=city_list[i], div=bc, metric='beta_diversity', ownership='private')
+  
+  beta_private<-beta_private %>% 
+    bind_rows(df)
+}
+
+beta_public<-data.frame()
+for (i in 1:length(city_list)){
+  
+  subset<-tree_community_plots_public %>% 
+    filter(city==city_list[i])
+  
+  bc<-mean(vegdist(subset[,-c(1,2)], methods='bray', upper=F, diag = F))
+  
+  df<-data.frame(city=city_list[i], div=bc, metric='beta_diversity', ownership='public')
+  
+  beta_public<-beta_public %>% 
+    bind_rows(df)
+}
+
+beta_planted<-data.frame()
+for (i in 1:length(city_list)){
+  
+  subset<-tree_community_plots_planted %>% 
+    filter(city==city_list[i])
+  
+  bc<-mean(vegdist(subset[,-c(1,2)], methods='bray', upper=F, diag = F))
+  
+  df<-data.frame(city=city_list[i], div=bc, metric='beta_diversity', planted='planted')
+  
+  beta_planted<-beta_planted %>% 
+    bind_rows(df)
+}
+
+beta_spont<-data.frame()
+for (i in 1:length(city_list)){
+  
+  subset<-tree_community_plots_spont %>% 
+    filter(city==city_list[i])
+  
+  bc<-mean(vegdist(subset[,-c(1,2)], methods='bray', upper=F, diag = F))
+  
+  df<-data.frame(city=city_list[i], div=bc, metric='beta_diversity', planted='spontaneous')
+  
+  beta_spont<-beta_spont %>% 
+    bind_rows(df)
+}
+
+
+diversity_owner<-rare_private %>% 
+  bind_rows(rare_public) %>% 
+  bind_rows(even_public) %>% 
+  bind_rows(even_private) %>% 
+  bind_rows(beta_public) %>% 
+  bind_rows(beta_private)
+
+div_owner_means<-diversity_owner %>% 
+  group_by(ownership, metric) %>% 
+  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
+  mutate(se=sd/sqrt(n))
+
+a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval))+
+  geom_bar(stat='identity')+
+  geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
+  facet_wrap(~metric, ncol=1, scales='free_y')+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab('Mean Diversity Value')+
+  xlab('Ownership')
+a
+
+diversity_planted<-rare_planted %>% 
+  bind_rows(rare_spont) %>% 
+  bind_rows(even_planted) %>% 
+  bind_rows(even_spont) %>% 
+  bind_rows(beta_planted) %>% 
+  bind_rows(beta_spont)
+
+div_plant_means<-diversity_planted %>% 
+  group_by(planted, metric) %>% 
+  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
+  mutate(se=sd/sqrt(n))
+
+b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
+  geom_bar(stat='identity')+
+  geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
+  facet_wrap(~metric, ncol=1, scales='free_y')+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab('Mean Diversity Value')+
+  xlab('Planted Status')+
+  annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)
+b
+
+div_fig<-grid.arrange(a,b, nrow=1)
+
+ggsave("Results/diversity_plots.pdf", div_fig, height = 5, width = 7)
+
+div_own_tests<-diversity_owner %>% 
+  pivot_wider(names_from = 'ownership', values_from = 'div')
+
+#ttests
+with(subset(div_own_tests, metric=='rarefied richness'), t.test(private, public, paired=T))#not sig
+
+with(subset(div_own_tests, metric=='evenness'), t.test(private, public, paired=T))# not sig
+
+with(subset(div_own_tests, metric=='beta_diversity'), t.test(private, public, paired=T))#not sig
+
+div_plant_tests<-diversity_planted %>% 
+  pivot_wider(names_from = 'planted', values_from = 'div')
+
+#ttests
+with(subset(div_plant_tests, metric=='rarefied richness'), t.test(planted, spontaneous, paired=T))#sig
+
+with(subset(div_plant_tests, metric=='evenness'), t.test(planted, spontaneous, paired=T))#sig
+
+with(subset(div_plant_tests, metric=='beta_diversity'), t.test(planted, spontaneous, paired=T))#sig
 
 
 
@@ -1062,6 +1344,44 @@ city_diversity  %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
 ggsave("Results/species_evenness.pdf", height = 5, width = 7)
+```
+
+##### Species Richness by climate (rarefied by ownership and planted)
+
+
+```{r sp-richness_climate}
+div_ownership<-diversity_owner %>% 
+  left_join(climate)
+
+div_plant<-diversity_planted %>% 
+  left_join(climate)
+
+summary(lm(div~MAP_mm*planted, data=subset(div_plant, metric=='rarefied richness')))
+
+summary(lm(div~Tmin_C*planted, data=subset(div_plant, metric=='rarefied richness')))
+
+ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=MAP_mm, y=div, colour = ownership))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+c<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=MAP_mm, y=div, colour = planted))+
+  geom_point()+
+  geom_smooth(method = 'lm')+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab('Rarefied Richness')+
+  xlab('MAP (mm)')+
+  scale_color_manual(name='', values=c('blue2', 'darkgreen'))
+  
+
+ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=Tmin_C, y=div, colour = ownership))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+d<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=Tmin_C, y=div, colour = planted))+
+  geom_point()+
+  geom_smooth(method = 'lm')
+
+
 ```
 
 #### Extrapolated diversity (iNEXT)
