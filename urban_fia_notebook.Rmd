@@ -122,6 +122,15 @@ trees_coords_merge <- full_join(x = live_trees,
 # climate data
 climate<-read_csv("Data/city_climate.csv")
 
+
+## Ariditiy index
+ai<-read_csv('Data/city_ai.csv')
+
+climate2<-climate %>% 
+  left_join(ai)
+
+pairs(climate2[,4:6])
+
 ```
 
 ### City profiles {.tabset}
@@ -351,7 +360,7 @@ fig2a<-trees_coords_merge %>%
   labs(x = "City (ordered by longitude)", y = "Proportion of city trees") +
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggsave("Results/prop_trees_ownership.pdf", height = 5, width = 7)
+#ggsave("Results/prop_trees_ownership.pdf", height = 5, width = 7)
 
 
 # Plot the proportion of city trees by ownership on forested land only
@@ -744,7 +753,7 @@ poolaccum_S %>%
   labs(x = "Number of plots with live trees", y = "Tree species") +
   theme_bw(base_size = 10) +
   theme(legend.position = "bottom")
-ggsave("Results/species_accumulation_plots.pdf", height = 5, width = 7)
+#ggsave("Results/species_accumulation_plots.pdf", height = 5, width = 7)
 ```
 
 #### Species area curves
@@ -779,7 +788,7 @@ poolaccum_S_area %>%
   labs(x = "Proportion of total city area sampled in plots", y = "Tree species") +
   theme_bw(base_size = 10) +
   theme(legend.position = "bottom")
-ggsave("Results/species_accumulation_area.pdf", height = 5, width = 7)
+#ggsave("Results/species_accumulation_area.pdf", height = 5, width = 7)
 ```
 
 #### Extrapolated species richness
@@ -874,7 +883,7 @@ df_rarified <- do.call(rbind,
 
 rich_explore<-df_rarified %>% 
   left_join(pooled_accum, by='city') %>% 
-  left_join(climate)
+  left_join(climate2)
 
 plot(rich_explore$rrichness, rich_explore$chao.est)
 
@@ -886,33 +895,33 @@ comparePlot<-rich_explore %>%
                      ifelse(rich_est=='chao.est'&rich_err=='SD', 1, 0))) %>% 
   filter(drop==0)
 
-ggplot(data=comparePlot, aes(x=Tmin_C, y=rich_val, color=rich_est))+
-  geom_point()+
-  geom_errorbar(aes(ymin=rich_val-err_val, ymax = rich_val+err_val))+
-  facet_grid(~rich_est)+
-  geom_smooth(method = 'lm')
-
-ggplot(data=comparePlot, aes(x=MAP_mm, y=rich_val, color=rich_est))+
-  geom_point()+
-  geom_errorbar(aes(ymin=rich_val-err_val, ymax = rich_val+err_val))+
-  facet_grid(~rich_est)+
-  geom_smooth(method = 'lm')
-
-
-
-ggplot(data=rich_explore, aes(x=Tmin_C, y=rrichness))+
-  geom_point()+
-  geom_errorbar(aes(ymin=rrichness-SD, ymax = rrichness+SD))+
-  geom_smooth(method = 'lm')
-
-ggsave("Results/rrich_Temp.pdf", height = 5, width = 7)
-
-ggplot(data=rich_explore, aes(x=MAP_mm, y=rrichness))+
-   geom_point()+
-  geom_errorbar(aes(ymin=rrichness-SD, ymax = rrichness+SD))+
-  geom_smooth(method = 'lm')
-
-ggsave("Results/rrich_MAP.pdf", height = 5, width = 7)
+# ggplot(data=comparePlot, aes(x=Tmin_C, y=rich_val, color=rich_est))+
+#   geom_point()+
+#   geom_errorbar(aes(ymin=rich_val-err_val, ymax = rich_val+err_val))+
+#   facet_grid(~rich_est)+
+#   geom_smooth(method = 'lm')
+# 
+# ggplot(data=comparePlot, aes(x=MAP_mm, y=rich_val, color=rich_est))+
+#   geom_point()+
+#   geom_errorbar(aes(ymin=rich_val-err_val, ymax = rich_val+err_val))+
+#   facet_grid(~rich_est)+
+#   geom_smooth(method = 'lm')
+# 
+# 
+# 
+# ggplot(data=rich_explore, aes(x=Tmin_C, y=rrichness))+
+#   geom_point()+
+#   geom_errorbar(aes(ymin=rrichness-SD, ymax = rrichness+SD))+
+#   geom_smooth(method = 'lm')
+# 
+# ggsave("Results/rrich_Temp.pdf", height = 5, width = 7)
+# 
+# ggplot(data=rich_explore, aes(x=MAP_mm, y=rrichness))+
+#    geom_point()+
+#   geom_errorbar(aes(ymin=rrichness-SD, ymax = rrichness+SD))+
+#   geom_smooth(method = 'lm')
+# 
+# ggsave("Results/rrich_MAP.pdf", height = 5, width = 7)
 ```
 
 
@@ -996,6 +1005,22 @@ panel.hist <- function(x, ...)
 
 pairs(rich_compare[,2:5])
 pairs(rich_compare[,2:5], upper.panel = panel.cor,diag.panel = panel.hist, cex.axis = 2)
+
+
+rich_climate<-rich_compare %>% 
+  left_join(climate2)
+
+summary(lm(ObservedRichness~ai, data=rich_climate))
+summary(lm(ObservedRichness~MAP_mm, data=rich_climate))
+summary(lm(ObservedRichness~Tmin_C, data=rich_climate))
+
+ggplot(data=rich_climate, aes(x=Tmin_C, y=ChaoEstimated))+
+  geom_point()
+
+
+test<-sanant %>% 
+  group_by(scientific) %>% 
+  summarize(n=length(DIA))
 
 ```
 
@@ -1264,12 +1289,26 @@ diversity_owner<-rare_private %>%
   bind_rows(even_public) %>% 
   bind_rows(even_private) %>% 
   bind_rows(beta_public) %>% 
-  bind_rows(beta_private)
+  bind_rows(beta_private) %>% 
+  left_join(city_coords,  by = c("city" = "camelname"))
 
 div_owner_means<-diversity_owner %>% 
   group_by(ownership, metric) %>% 
   summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
   mutate(se=sd/sqrt(n))
+
+
+ggplot(data=subset(diversity_owner, metric=='rarefied richness')) +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = div,
+               fill = ownership),
+           position = "dodge") +
+  scale_fill_viridis_d(name = "Ownership", option = "D") +
+  labs(x = "City (ordered by longitude)", y = "Rarefied Richness") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom") #+
+  
 
 a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval))+
   geom_bar(stat='identity')+
@@ -1310,7 +1349,7 @@ div_own_tests<-diversity_owner %>%
   pivot_wider(names_from = 'ownership', values_from = 'div')
 
 #ttests
-with(subset(div_own_tests, metric=='rarefied richness'), t.test(private, public, paired=T))#not sig
+with(subset(div_own_tests, metric=='rarefied richness'), t.test(private, public, paired=T))# sig
 
 with(subset(div_own_tests, metric=='evenness'), t.test(private, public, paired=T))# not sig
 
@@ -1351,25 +1390,31 @@ ggsave("Results/species_evenness.pdf", height = 5, width = 7)
 
 ```{r sp-richness_climate}
 div_ownership<-diversity_owner %>% 
-  left_join(climate)
+  left_join(climate2)
 
 div_plant<-diversity_planted %>% 
-  left_join(climate)
+  left_join(climate2)
+
+summary(lm(div~ai, data=subset(div_plant, metric=='rarefied richness')))
+
 
 summary(lm(div~MAP_mm*planted, data=subset(div_plant, metric=='rarefied richness')))
 
 summary(lm(div~Tmin_C*planted, data=subset(div_plant, metric=='rarefied richness')))
 
-ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=MAP_mm, y=div, colour = ownership))+
+summary(lm(div~ai*planted, data=subset(div_plant, metric=='rarefied richness')))
+summary(lm(div~ai*ownership, data=subset(div_ownership, metric=='rarefied richness')))
+
+ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=ai, y=div, colour = ownership))+
   geom_point()+
   geom_smooth(method = 'lm')
 
-c<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=MAP_mm, y=div, colour = planted))+
+c<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=ai, y=div, colour = planted))+
   geom_point()+
   geom_smooth(method = 'lm')+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
   ylab('Rarefied Richness')+
-  xlab('MAP (mm)')+
+  xlab('Aridity Index')+
   scale_color_manual(name='', values=c('blue2', 'darkgreen'))
   
 
@@ -1377,13 +1422,13 @@ ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=Tmin_C, y=
   geom_point()+
   geom_smooth(method = 'lm')
 
-d<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=Tmin_C, y=div, colour = planted))+
+d<-ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=ai, y=div, colour = ownership))+
   geom_point()+
   geom_smooth(method = 'lm')+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
   ylab('Rarefied Richness')+
-  xlab('MAT (C)')+
-  scale_color_manual(name='', values=c('blue2', 'darkgreen'))
+  xlab('Aridity Index')+
+  scale_color_manual(name='', values=c('purple', 'blue'))
 d
 
 climatefig<-grid.arrange(c,d, nrow=1)
