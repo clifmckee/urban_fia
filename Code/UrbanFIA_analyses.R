@@ -116,7 +116,7 @@ propowner<-trees_coords_merge %>%
 
 fig2a<-propowner%>% 
   ggplot() +
-  geom_bar(aes(x = reorder(city, density, decreasing = FALSE),
+  geom_bar(aes(x = reorder(city, lng, decreasing = FALSE),
                y = n,
                fill=factor(OWNGRPCD, levels = c( "OtherFederal","StateLocal", "Private", "Water"))), 
            position = "fill", stat = 'identity') +
@@ -141,7 +141,6 @@ propPlanted <- trees_coords_merge %>%
   group_by(city, planted_def) %>% 
   summarize(n = n(), .groups = "drop") %>% 
   inner_join(y = tree_city_merge) %>% 
-  inner_join(y = city_ecoreg) %>% 
   group_by(city) %>% 
   mutate(proportion = round(n/sum(n), 2))
 
@@ -159,7 +158,7 @@ Fig2b
 
 fig2<-ggarrange(fig2a, Fig2b, labels=c('A', 'B'), ncol=1)
 
-ggsave("Results/Figure2_Feb18.jpeg", height = 7, width = 5)
+ggsave("Results/Figure2_Feb18.jpeg", height = 8, width = 5)
 
 
 # #### Ownership of live trees BASAL AREA
@@ -272,64 +271,40 @@ for(i in 1:length(tree_city_merge$city)){
                        poolaccum_fun(tree_community_plots,
                                      tree_city_merge$city[i], 100, "S"))
 }
-poolaccum_S <- clean_names(poolaccum_S) %>% 
-  inner_join(y = city_ecoreg)
 
-# Plot species accumulation curves by city
-poolaccum_S %>% 
-  ggplot() +
-  geom_ribbon(aes(x = n, ymin = lower, ymax = upper,
-                  group = city, fill = classification_3), alpha = 0.1) +
-  geom_line(aes(x = n, y = mean,
-                group = city, color = classification_3)) +
-  geom_text_repel(data = poolaccum_S %>% 
-                    group_by(city) %>% 
-                    slice_tail(n = 1),
-                  aes(label = paste0(city, " = ", mean),
-                      x = n,
-                      y = mean),
-                  nudge_x = 5,
-                  min.segment.length = 2,
-                  size = 2.5,
-                  max.overlaps = 22) +
-  scale_color_brewer(name = "Group", palette = "Dark2") +
-  scale_fill_brewer(name = "Group", palette = "Dark2") +
-  labs(x = "Number of plots with live trees", y = "Tree species") +
-  theme_bw(base_size = 10) +
-  theme(legend.position = "bottom")
 
 
 #### Species area curves
 
-# Calculate plots as proportion of city area
-poolaccum_S_area <- poolaccum_S %>% 
-  inner_join(landuse) %>% 
-  mutate(cumul_plot_area_m2 = n * 672.45352234021,
-         city_area_m2 = city_acres * 4046.8564224,
-         prop_city_area = cumul_plot_area_m2 / city_area_m2)
-
-# Plot species accumulation curves by city as a proportion of city area
-poolaccum_S_area %>% 
-  ggplot() +
-  geom_ribbon(aes(x = prop_city_area, ymin = lower, ymax = upper,
-                  group = city, fill = classification_3), alpha = 0.1) +
-  geom_line(aes(x = prop_city_area, y = mean,
-                group = city, color = classification_3)) +
-  geom_text_repel(data = poolaccum_S_area %>% 
-                    group_by(city) %>% 
-                    slice_tail(n = 1),
-                  aes(label = paste0(city, " = ", mean),
-                      x = prop_city_area,
-                      y = mean),
-                  nudge_x = 0.0001,
-                  min.segment.length = 0.0001,
-                  size = 2.5,
-                  max.overlaps = 22) +
-  scale_color_brewer(name = "Group", palette = "Dark2") +
-  scale_fill_brewer(name = "Group", palette = "Dark2") +
-  labs(x = "Proportion of total city area sampled in plots", y = "Tree species") +
-  theme_bw(base_size = 10) +
-  theme(legend.position = "bottom")
+# # Calculate plots as proportion of city area
+# poolaccum_S_area <- poolaccum_S %>% 
+#   inner_join(landuse) %>% 
+#   mutate(cumul_plot_area_m2 = n * 672.45352234021,
+#          city_area_m2 = city_acres * 4046.8564224,
+#          prop_city_area = cumul_plot_area_m2 / city_area_m2)
+# 
+# # Plot species accumulation curves by city as a proportion of city area
+# poolaccum_S_area %>% 
+#   ggplot() +
+#   geom_ribbon(aes(x = prop_city_area, ymin = lower, ymax = upper,
+#                   group = city, fill = classification_3), alpha = 0.1) +
+#   geom_line(aes(x = prop_city_area, y = mean,
+#                 group = city, color = classification_3)) +
+#   geom_text_repel(data = poolaccum_S_area %>% 
+#                     group_by(city) %>% 
+#                     slice_tail(n = 1),
+#                   aes(label = paste0(city, " = ", mean),
+#                       x = prop_city_area,
+#                       y = mean),
+#                   nudge_x = 0.0001,
+#                   min.segment.length = 0.0001,
+#                   size = 2.5,
+#                   max.overlaps = 22) +
+#   scale_color_brewer(name = "Group", palette = "Dark2") +
+#   scale_fill_brewer(name = "Group", palette = "Dark2") +
+#   labs(x = "Proportion of total city area sampled in plots", y = "Tree species") +
+#   theme_bw(base_size = 10) +
+#   theme(legend.position = "bottom")
 
 
 #### Extrapolated species richness
@@ -353,6 +328,34 @@ pooled_accum_long <- pooled_accum %>%
                names_to = c("estimate", "measure"), names_sep = "\\.",
                values_to = "value") %>% 
   pivot_wider(names_from = measure, values_from = value) 
+
+
+poolaccum_S <- clean_names(poolaccum_S) %>% 
+  left_join(climate2)
+
+# Plot species accumulation curves by city
+poolaccum_S %>% 
+  ggplot() +
+  geom_ribbon(aes(x = n, ymin = lower, ymax = upper,
+                  group = city), alpha = 0.1) +
+  geom_line(aes(x = n, y = mean,
+                group = city)) +
+  geom_text_repel(data = poolaccum_S %>% 
+                    group_by(city) %>% 
+                    slice_tail(n = 1),
+                  aes(label = paste0(city, " = ", mean),
+                      x = n,
+                      y = mean),
+                  nudge_x = 5,
+                  min.segment.length = 2,
+                  size = 2.5,
+                  max.overlaps = 22) +
+  scale_color_brewer(name = "Group", palette = "Dark2") +
+  scale_fill_brewer(name = "Group", palette = "Dark2") +
+  labs(x = "Number of plots with live trees", y = "Tree species") +
+  theme_bw(base_size = 10) +
+  theme(legend.position = "bottom")
+
 
 # Plot extrapolated species richness indices by city
 pooled_accum_long %>% 
@@ -483,25 +486,24 @@ city_diversity <- community_structure(cities_abund,
                                       replicate.var = "city",
                                       abundance.var = "relative_prop",
                                       metric = "Evar") %>% 
-  inner_join(y = tree_city_merge) %>% 
-  inner_join(y = city_ecoreg)
+  inner_join(y = tree_city_merge)
 
-# Plot richness
-city_diversity  %>% 
-  ggplot() +
-  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-               y = richness)) +
-  labs(x = "City (ordered by longitude)", y = "Species richness") +
-  theme_bw(base_size = 10) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
-ggsave("Results/species_richness.pdf", height = 5, width = 7)
+# # Plot richness
+# city_diversity  %>% 
+#   ggplot() +
+#   geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+#                y = richness)) +
+#   labs(x = "City (ordered by longitude)", y = "Species richness") +
+#   theme_bw(base_size = 10) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
+# ggsave("Results/species_richness.pdf", height = 5, width = 7)
 
-# Plot richness
-city_diversity %>% 
-  select(city, classification_3, richness, Evar) %>% 
-  kable()
-write_csv(city_diversity, "Results/city_diversity.csv")
+# # Plot richness
+# city_diversity %>% 
+#   select(city, classification_3, richness, Evar) %>% 
+#   kable()
+# write_csv(city_diversity, "Results/city_diversity.csv")
 ```
 
 ####comparing all ways of doing richness
@@ -831,25 +833,64 @@ diversity_owner<-rare_private %>%
   bind_rows(even_private) %>% 
   bind_rows(beta_public) %>% 
   bind_rows(beta_private) %>% 
-  left_join(city_coords,  by = c("city" = "camelname"))
+  left_join(city_coords,  by = c("city" = "camelname")) %>% 
+  mutate(metric2=factor(metric, levels=c('rarefied richness', 'evenness', 'beta_diversity')))
+
+diversity_planted<-rare_planted %>% 
+  bind_rows(rare_spont) %>% 
+  bind_rows(even_planted) %>% 
+  bind_rows(even_spont) %>% 
+  bind_rows(beta_planted) %>% 
+  bind_rows(beta_spont) %>% 
+  left_join(city_coords,  by = c("city" = "camelname")) %>% 
+  mutate(metric2=factor(metric, levels=c('rarefied richness', 'evenness', 'beta_diversity')))
+
+labels<-c('beta_diversity'='Beta Diversity',
+          'evenness' = 'Evenness' ,
+          'rarefied richness' = 'Rarefied Richness')
+a<-
+ggplot(data=diversity_owner) +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = div,
+               fill = ownership),
+           position = "dodge") +
+  scale_fill_manual(name = "Ownership", values=c('#E69F00','#0072B2'), labels=c('Private', 'Public')) +
+  labs(x = "City (ordered by longitude)", y = "Diversity") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top", panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  facet_wrap(~metric2, ncol=1, scales='free_y', labeller=labeller(metric2=labels))
+
+a
+
+b<-
+ggplot(data=diversity_planted) +
+  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
+               y = div,
+               fill = planted),
+           position = "dodge") +
+  scale_fill_manual(name = "Planted Status", values=c("#7B3294","#009E73"), labels=c('Planted', 'Natural Regeneration')) +
+  labs(x = "City (ordered by longitude)", y = "Diversity") +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top", panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  facet_wrap(~metric2, ncol=1, scales='free_y', labeller=labeller(metric2=labels))
+b
+
+div_fig<-grid.arrange(a,b, nrow=1)
+
+ggsave('Results\\Diversity_BigFig.jpeg', div_fig, width=10, height=10, units='in')
+
+
+div_plant_means<-diversity_planted %>% 
+  group_by(planted, metric) %>% 
+  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
+  mutate(se=sd/sqrt(n))
 
 div_owner_means<-diversity_owner %>% 
   group_by(ownership, metric) %>% 
   summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
   mutate(se=sd/sqrt(n))
-
-
-ggplot(data=subset(diversity_owner, metric=='rarefied richness')) +
-  geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-               y = div,
-               fill = ownership),
-           position = "dodge") +
-  scale_fill_viridis_d(name = "Ownership", option = "D") +
-  labs(x = "City (ordered by longitude)", y = "Rarefied Richness") +
-  theme_bw(base_size = 10) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "bottom") #+
-
 
 a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval))+
   geom_bar(stat='identity')+
@@ -860,17 +901,6 @@ a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval))+
   xlab('Ownership')
 a
 
-diversity_planted<-rare_planted %>% 
-  bind_rows(rare_spont) %>% 
-  bind_rows(even_planted) %>% 
-  bind_rows(even_spont) %>% 
-  bind_rows(beta_planted) %>% 
-  bind_rows(beta_spont)
-
-div_plant_means<-diversity_planted %>% 
-  group_by(planted, metric) %>% 
-  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
-  mutate(se=sd/sqrt(n))
 
 b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
   geom_bar(stat='identity')+
@@ -882,7 +912,7 @@ b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
   annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)
 b
 
-div_fig<-grid.arrange(a,b, nrow=1)
+
 
 ggsave("Results/diversity_plots.pdf", div_fig, height = 5, width = 7)
 
@@ -936,28 +966,43 @@ div_ownership<-diversity_owner %>%
 div_plant<-diversity_planted %>% 
   left_join(climate2)
 
+div_rare<-df_rarified %>% 
+  left_join(climate2)
+
 summary(lm(div~ai, data=subset(div_plant, metric=='rarefied richness')))
-
-
-summary(lm(div~MAP_mm*planted, data=subset(div_plant, metric=='rarefied richness')))
-
+summary(lm(div~MAP_mm*planted, data=subset(div_plant, metric=='rarefied richness'&MAP_mm>500)))
 summary(lm(div~Tmin_C*planted, data=subset(div_plant, metric=='rarefied richness')))
 
-summary(lm(div~ai*planted, data=subset(div_plant, metric=='rarefied richness')))
-summary(lm(div~ai*ownership, data=subset(div_ownership, metric=='rarefied richness')))
+summary(lm(div~MAP_mm, data=subset(div_plant, metric=='rarefied richness'&planted=='spontaneous')))
+summary(lm(div~Tmin_C, data=subset(div_plant, metric=='rarefied richness'&planted=='spontaneous')))
+summary(lm(div~MAP_mm, data=subset(div_plant, metric=='rarefied richness'&planted=='planted')))
+summary(lm(div~Tmin_C, data=subset(div_plant, metric=='rarefied richness'&planted=='planted')))
+
+
+# summary(lm(div~ai*ownership, data=subset(div_ownership, metric=='rarefied richness')))
+# summary(lm(div~MAP_mm*ownership, data=subset(div_ownership, metric=='rarefied richness')))
+# summary(lm(div~Tmin_C*ownership, data=subset(div_ownership, metric=='rarefied richness')))
+
+summary(lm(rrichness~ai, data=subset(div_rare)))
+summary(lm(rrichness~MAP_mm, data=subset(div_rare, MAP_mm>500)))
+summary(lm(rrichness~Tmin_C, data=subset(div_rare)))
 
 ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=ai, y=div, colour = ownership))+
   geom_point()+
   geom_smooth(method = 'lm')
 
-c<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=ai, y=div, colour = planted))+
+
+ggplot(data=div_rare, aes(x=ai, y=rrichness))+
+  geom_point()
+
+c<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=Tmin_C, y=div))+
   geom_point()+
   geom_smooth(method = 'lm')+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
   ylab('Rarefied Richness')+
-  xlab('Aridity Index')+
+  xlab('Minimum Temp (C)')+
   scale_color_manual(name='', values=c('blue2', 'darkgreen'))
-
+c
 
 ggplot(data=filter(div_ownership, metric=='rarefied richness'), aes(x=Tmin_C, y=div, colour = ownership))+
   geom_point()+
