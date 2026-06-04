@@ -1,8 +1,5 @@
----
-title: "Urban FIA community ecology analysis"
-author: "Clifton McKee, Meghan Avolio "
-date: "`r Sys.Date()`"
-
+# "Urban FIA community ecology analysis"
+# authors: "Clifton McKee, Meghan Avolio "
 
 ## Load packages and functions
 
@@ -107,7 +104,7 @@ climate2<-climate %>%
 pairs(climate2[,4:6])
 
 
-# Abundance and basal area of trees ---------------------------------------
+# Abundance of trees by ownership and planted Fig 2 ---------------------------------------
 
 #### Ownership of live trees
 
@@ -135,7 +132,6 @@ fig2a<-propowner%>%
   theme_bw(base_size = 10) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = 'top')
 fig2a
-#ggsave("Results/prop_trees_ownership.pdf", height = 5, width = 7)
 
 
 #### Number of planted trees
@@ -174,78 +170,26 @@ fig2<-ggarrange(fig2a, Fig2b, labels=c('A', 'B'), ncol=1)
 ggsave("Results/Figure2.jpeg", height = 8, width = 5)
 
 
-# #### Ownership of live trees BASAL AREA
-# # Plot the proportion of city trees by ownership
-# trees_coords_merge %>%   
-#   mutate(basal_area = 0.00064516*pi*(DIA/2)^2) %>% 
-#   group_by(city, lat, lng, OWNGRPCD) %>% 
-#   summarize(sumBA = sum(basal_area)) %>% 
-#   ggplot() +
-#   geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-#                y = sumBA,
-#                fill = OWNGRPCD),
-#            position = "fill") +
-#   scale_fill_viridis_d(name = "Ownership", option = "H") +
-#   labs(x = "City (ordered by longitude)", y = "Proportion of city trees basal area") +
-#   theme_bw(base_size = 10) +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-# ggsave("Results/prop_trees_ownership_BasalArea.pdf", height = 5, width = 7)
+# ##impact of density and age on prop
 # 
-# #### Number of planted trees BASAL area
-# 
-# # What basal area of trees in each city are planted?
-# planted_trees_tableBA <- trees_coords_merge %>% 
-#   mutate(basal_area = 0.00064516*pi*(DIA/2)^2) %>% 
-#   mutate(IS_PLANTED = case_when(is.na(IS_PLANTED) & 
-#                                   FIA_LANDUSE == "Forest land" ~ 2,
-#                                 TRUE ~ IS_PLANTED),
-#          planted_def = case_when(IS_PLANTED == 1 ~ "planted",
-#                                  IS_PLANTED == 2 ~ "natural regeneration",
-#                                  IS_PLANTED == 3 ~ "not sure")) %>% 
-#   group_by(city, planted_def) %>% 
-#   summarize(sumBA = sum(basal_area), .groups = "drop") %>% 
-#   inner_join(y = tree_city_merge) %>% 
-#   inner_join(y = city_ecoreg) %>% 
+# propowner2<-propowner %>% 
 #   group_by(city) %>% 
-#   mutate(proportion = round(sumBA/sum(sumBA), 2))
+#   mutate(tot=sum(n), prop=n/tot) %>% 
+#   left_join(city_age)
 # 
-# planted_trees_tableBA %>% 
-#   ggplot() +
-#   geom_col(aes(x = reorder(city, lng, decreasing = FALSE),
-#                y = proportion,
-#                fill = planted_def),
-#            position = "stack") +
-#   scale_fill_viridis_d(name = "Planted", option = "D") +
-#   labs(x = "City (ordered by longitude)", y = "Planted status of trees Basal area") +
-#   theme_bw(base_size = 10) +
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-#         legend.position = "bottom") #+
-# #facet_grid(cols = vars(classification_3), scales = "free_x", space = "free_x")
-
-##impact of density and age on prop
-
-propowner2<-propowner %>% 
-  group_by(city) %>% 
-  mutate(tot=sum(n), prop=n/tot) %>% 
-  left_join(city_age)
-
-summary(lm(prop~density, data=subset(propowner2, OWNGRPCD=='Private')))
-
-ggplot(data=subset(propowner2, OWNGRPCD=='Private'), aes(x=density, y=prop))+
-  geom_point()
-
-
-summary(lm(prop~est, data=subset(propowner2, OWNGRPCD=='Private')))
-
-summary(lm(proportion~density, data=subset(propPlanted, planted_def=='Planted')))
+# summary(lm(prop~density, data=subset(propowner2, OWNGRPCD=='Private')))
+# 
+# ggplot(data=subset(propowner2, OWNGRPCD=='Private'), aes(x=density, y=prop))+
+#   geom_point()
+# 
+# 
+# summary(lm(prop~est, data=subset(propowner2, OWNGRPCD=='Private')))
+# 
+# summary(lm(proportion~density, data=subset(propPlanted, planted_def=='Planted')))
 
 
 
-# estimating diversity ----------------------------------------------------
-
-
-
-#### Species accumulation curves - 
+# species accumulation ----------------------------------------------------
 
 # Convert tree data to community dataset, pooled by plots within city
 tree_community_plots <- live_trees %>% 
@@ -287,41 +231,7 @@ for(i in 1:length(tree_city_merge$city)){
 
 
 
-#### Species area curves
-
-# # Calculate plots as proportion of city area
-# poolaccum_S_area <- poolaccum_S %>% 
-#   inner_join(landuse) %>% 
-#   mutate(cumul_plot_area_m2 = n * 672.45352234021,
-#          city_area_m2 = city_acres * 4046.8564224,
-#          prop_city_area = cumul_plot_area_m2 / city_area_m2)
-# 
-# # Plot species accumulation curves by city as a proportion of city area
-# poolaccum_S_area %>% 
-#   ggplot() +
-#   geom_ribbon(aes(x = prop_city_area, ymin = lower, ymax = upper,
-#                   group = city, fill = classification_3), alpha = 0.1) +
-#   geom_line(aes(x = prop_city_area, y = mean,
-#                 group = city, color = classification_3)) +
-#   geom_text_repel(data = poolaccum_S_area %>% 
-#                     group_by(city) %>% 
-#                     slice_tail(n = 1),
-#                   aes(label = paste0(city, " = ", mean),
-#                       x = prop_city_area,
-#                       y = mean),
-#                   nudge_x = 0.0001,
-#                   min.segment.length = 0.0001,
-#                   size = 2.5,
-#                   max.overlaps = 22) +
-#   scale_color_brewer(name = "Group", palette = "Dark2") +
-#   scale_fill_brewer(name = "Group", palette = "Dark2") +
-#   labs(x = "Proportion of total city area sampled in plots", y = "Tree species") +
-#   theme_bw(base_size = 10) +
-#   theme(legend.position = "bottom")
-
-
-#### Extrapolated species richness
-
+# Extrapolated richness ---------------------------------------------------
 
 # Extrapolate species diversity from pooled plots within cities
 pooled_accum <- with(tree_community_plots[, c(1, 2)],
@@ -342,6 +252,9 @@ pooled_accum_long <- pooled_accum %>%
                values_to = "value") %>% 
   pivot_wider(names_from = measure, values_from = value) 
 
+
+
+# Making Figure 3 ---------------------------------------------------------
 
 poolaccum_S <- clean_names(poolaccum_S) %>% 
   left_join(climate2)
@@ -416,6 +329,7 @@ fig3<-ggarrange(accumulationPlot, estmated_plot, labels=c('A', 'B'), common.lege
 ggsave("Results/Figure3.jpeg", height = 10, width = 8)
 
 
+# comparing extrapolations ------------------------------------------------
 
 # Plot extrapolated species richness indices by city
 pooled_accum_long %>% 
@@ -443,9 +357,12 @@ ggplot(data=pooled_accum, aes(x=MAP_mm, y=jack1.est))+
 ggplot(data=pooled_accum, aes(x=Tmin_C, y=chao.est))+
   geom_point()
 
+
+
+
+# Rarefied Richness and richness comparions-------------------------------------------------------
+
 ###rarified richness (sampling same number of plots)
-
-
 #code from co-pilot
 
 # split into a named list of community matrices
@@ -525,11 +442,6 @@ comparePlot<-rich_explore %>%
 #   geom_smooth(method = 'lm')
 # 
 # ggsave("Results/rrich_MAP.pdf", height = 5, width = 7)
-```
-
-
-
-
 
 #### Species richness (codyn)
 
@@ -607,23 +519,7 @@ pairs(rich_compare[,2:5])
 pairs(rich_compare[,2:5], upper.panel = panel.cor,diag.panel = panel.hist, cex.axis = 2)
 
 
-rich_climate<-rich_compare %>% 
-  left_join(climate2)
-
-summary(lm(ObservedRichness~ai, data=rich_climate))
-summary(lm(ObservedRichness~MAP_mm, data=rich_climate))
-summary(lm(ObservedRichness~Tmin_C, data=rich_climate))
-
-ggplot(data=rich_climate, aes(x=Tmin_C, y=ChaoEstimated))+
-  geom_point()
-
-
-test<-sanant %>% 
-  group_by(scientific) %>% 
-  summarize(n=length(DIA))
-
-
-##### Species Richness, Evenness, and Beta (rarefied by ownership and planted)
+# Richness, Evenness and Beta div by ownership and planted ----------------
 
 #need to find plot data and make public/private columns and merge with city, same for planted, not planted
 
@@ -899,6 +795,9 @@ diversity_planted<-rare_planted %>%
   left_join(city_coords,  by = c("city" = "camelname")) %>% 
   mutate(metric2=factor(metric, levels=c('rarefied richness', 'evenness', 'beta_diversity')))
 
+
+# Making figure 4 ---------------------------------------------------------
+
 labels<-c('beta_diversity'='Beta Diversity',
           'evenness' = 'Evenness' ,
           'rarefied richness' = 'Rarefied Richness')
@@ -935,40 +834,43 @@ div_fig<-grid.arrange(a,b, nrow=1)
 
 ggsave('Results\\Diversity_BigFig.jpeg', div_fig, width=10, height=10, units='in')
 
+# 
+# div_plant_means<-diversity_planted %>% 
+#   group_by(planted, metric) %>% 
+#   summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
+#   mutate(se=sd/sqrt(n))
+# 
+# div_owner_means<-diversity_owner %>% 
+#   group_by(ownership, metric) %>% 
+#   summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
+#   mutate(se=sd/sqrt(n))
+# 
+# a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval))+
+#   geom_bar(stat='identity')+
+#   geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
+#   facet_wrap(~metric, ncol=1, scales='free_y')+
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+#   ylab('Mean Diversity Value')+
+#   xlab('Ownership')
+# a
+# 
+# 
+# b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
+#   geom_bar(stat='identity')+
+#   geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
+#   facet_wrap(~metric, ncol=1, scales='free_y')+
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+#   ylab('Mean Diversity Value')+
+#   xlab('Planted Status')+
+#   annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)
+# b
+# 
+# 
+# 
+# ggsave("Results/diversity_plots.pdf", div_fig, height = 5, width = 7)
 
-div_plant_means<-diversity_planted %>% 
-  group_by(planted, metric) %>% 
-  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
-  mutate(se=sd/sqrt(n))
+# ttest between ownership and planting types ------------------------------
 
-div_owner_means<-diversity_owner %>% 
-  group_by(ownership, metric) %>% 
-  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
-  mutate(se=sd/sqrt(n))
-
-a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval))+
-  geom_bar(stat='identity')+
-  geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
-  facet_wrap(~metric, ncol=1, scales='free_y')+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  ylab('Mean Diversity Value')+
-  xlab('Ownership')
-a
-
-
-b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
-  geom_bar(stat='identity')+
-  geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
-  facet_wrap(~metric, ncol=1, scales='free_y')+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  ylab('Mean Diversity Value')+
-  xlab('Planted Status')+
-  annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)
-b
-
-
-
-ggsave("Results/diversity_plots.pdf", div_fig, height = 5, width = 7)
 
 div_own_tests<-diversity_owner %>% 
   pivot_wider(names_from = 'ownership', values_from = 'div')
@@ -991,8 +893,7 @@ with(subset(div_plant_tests, metric=='evenness'), t.test(planted, spontaneous, p
 with(subset(div_plant_tests, metric=='beta_diversity'), t.test(planted, spontaneous, paired=T))#sig
 
 
-
-##### Species Richness by climate (rarefied by ownership and planted)
+# species richness versus climate Figure 5 -----------------------------------------
 
 div_plant<-diversity_planted %>% 
   left_join(climate2)
@@ -1033,9 +934,9 @@ climatefig
 
 ggsave("Results/Fig5.jpeg", climatefig, height = 5, width = 7)
 
-### Compositional diversity {.tabset}
 
-#### Compositional differences
+# NMDS analyses and figure 6 ----------------------------------------------
+
 
 # Community composition of each city
 city_comm <- live_trees %>% 
@@ -1065,8 +966,9 @@ ggplot() +
 
 ggsave("Results/Figure6.jpeg", height = 5, width = 5)
 
-#### Rank abundance curves
 
+
+# top 10 species per city RAC and figure 7 --------------------------------
 
 # Rank abundance of species in each city
 rank_abundance <- live_trees %>% 
