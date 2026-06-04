@@ -1110,7 +1110,7 @@ merge_rank %>%
                y = prop2, fill = name)) +
   geom_text(aes(x = factor(row_number),
                 y = prop, label = scientific),
-            size = 2,
+            size = 3,
             angle = 90,
             hjust = 0,
             nudge_y = 0.02) +
@@ -1122,6 +1122,6 @@ merge_rank %>%
   theme(legend.position = "top", panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   facet_wrap(~city, ncol = 6)
 
-ggsave("Results/Fig7.jpeg", height = 11, width = 11)
+ggsave("Results/Fig7.jpeg", height = 13, width = 11)
 
 
