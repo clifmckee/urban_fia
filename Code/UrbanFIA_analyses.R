@@ -170,6 +170,36 @@ fig2<-ggarrange(fig2a, Fig2b, labels=c('A', 'B'), ncol=1)
 ggsave("Results/Figure2.jpeg", height = 8, width = 5)
 
 
+# What number of trees in each city are planted by public or private?
+
+#owner total
+ownertotal<-propowner |> 
+  mutate(own=ifelse(OWNGRPCD=='Private', 'Private', 'Public')) |> 
+  group_by(city, own) |> 
+  summarise(tot=sum(n))
+
+Planted_Own <- trees_coords_merge %>% 
+  filter(OWNGRPCD!='Water') |> 
+  mutate(IS_PLANTED = case_when(is.na(IS_PLANTED) & 
+                                  FIA_LANDUSE == "Forest land" ~ 2,
+                                TRUE ~ IS_PLANTED),
+         planted_def = case_when(IS_PLANTED == 1 ~ "Planted",
+                                 IS_PLANTED == 2 ~ "Natural Regeneration",
+                                 IS_PLANTED == 3 ~ "Unknown")) %>% 
+  mutate(own=ifelse(OWNGRPCD=='Private', 'Private', 'Public')) |> 
+  group_by(city, own, planted_def) %>% 
+  summarize(n = n(), .groups = "drop") %>% 
+  inner_join(y = tree_city_merge) |> 
+  select(city, own, planted_def, n) |> 
+  left_join(ownertotal) |> 
+  mutate(prop=n/tot) 
+
+ggplot(data=Planted_Own, aes(x=city, y=prop, fill=planted_def))+
+  geom_bar(aes(group=own), stat='identity')+
+  #scale_color_manual(values=c('black', 'gray'))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~own)
+
 # ##impact of density and age on prop
 # 
 # propowner2<-propowner %>% 
@@ -834,40 +864,44 @@ div_fig<-grid.arrange(a,b, nrow=1)
 
 ggsave('Results\\Diversity_BigFig.jpeg', div_fig, width=10, height=10, units='in')
 
-# 
-# div_plant_means<-diversity_planted %>% 
-#   group_by(planted, metric) %>% 
-#   summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
-#   mutate(se=sd/sqrt(n))
-# 
-# div_owner_means<-diversity_owner %>% 
-#   group_by(ownership, metric) %>% 
-#   summarise(mval=mean(div), sd=sd(div), n=length(div)) %>% 
-#   mutate(se=sd/sqrt(n))
-# 
-# a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval))+
-#   geom_bar(stat='identity')+
-#   geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
-#   facet_wrap(~metric, ncol=1, scales='free_y')+
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-#   ylab('Mean Diversity Value')+
-#   xlab('Ownership')
-# a
-# 
-# 
-# b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
-#   geom_bar(stat='identity')+
-#   geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
-#   facet_wrap(~metric, ncol=1, scales='free_y')+
-#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-#   ylab('Mean Diversity Value')+
-#   xlab('Planted Status')+
-#   annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)
-# b
-# 
-# 
-# 
-# ggsave("Results/diversity_plots.pdf", div_fig, height = 5, width = 7)
+#figure of averages
+
+div_plant_means<-diversity_planted %>%
+  group_by(planted, metric) %>%
+  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>%
+  mutate(se=sd/sqrt(n))
+
+div_owner_means<-diversity_owner %>%
+  group_by(ownership, metric) %>%
+  summarise(mval=mean(div), sd=sd(div), n=length(div)) %>%
+  mutate(se=sd/sqrt(n),
+         sig=ifelse(metric=='rarefied richness', '*', ''))
+
+a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval, label=sig))+
+  geom_bar(stat='identity')+
+  geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
+  facet_wrap(~metric, ncol=1, scales='free_y')+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab('Mean Diversity Value')+
+  xlab('Ownership')+
+  geom_text(aes(x=1.5, y=Inf))
+  
+a
+
+
+b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
+  geom_bar(stat='identity')+
+  geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
+  facet_wrap(~metric, ncol=1, scales='free_y')+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  ylab('Mean Diversity Value')+
+  xlab('Planted Status')+
+  annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)
+b
+
+
+
+ggsave("Results/diversity_plots.pdf", div_fig, height = 5, width = 7)
 
 # ttest between ownership and planting types ------------------------------
 
@@ -898,14 +932,23 @@ with(subset(div_plant_tests, metric=='beta_diversity'), t.test(planted, spontane
 div_plant<-diversity_planted %>% 
   left_join(climate2)
 
+div_own<-diversity_owner |> 
+  left_join(climate2)
+
 div_rare<-df_rarified %>% 
   left_join(climate2)
 
-#run four regression models 
+#run four regression models for planted
 summary(lm(div~MAP_mm, data=subset(div_plant, metric=='rarefied richness'&planted=='spontaneous')))
 summary(lm(div~Tmin_C, data=subset(div_plant, metric=='rarefied richness'&planted=='spontaneous')))
 summary(lm(div~MAP_mm, data=subset(div_plant, metric=='rarefied richness'&planted=='planted')))
 summary(lm(div~Tmin_C, data=subset(div_plant, metric=='rarefied richness'&planted=='planted')))
+
+#run four regression models for ownership 
+summary(lm(div~MAP_mm, data=subset(div_own, metric=='rarefied richness'&ownership=='public')))
+summary(lm(div~Tmin_C, data=subset(div_own, metric=='rarefied richness'&ownership=='public')))
+summary(lm(div~MAP_mm, data=subset(div_own, metric=='rarefied richness'&ownership=='private')))
+summary(lm(div~Tmin_C, data=subset(div_own, metric=='rarefied richness'&ownership=='private')))
 
 #overall for a city not by planted status
 summary(lm(rrichness~MAP_mm, data=subset(div_rare)))
@@ -934,6 +977,14 @@ climatefig
 
 ggsave("Results/Fig5.jpeg", climatefig, height = 5, width = 7)
 
+map_rich_plot_own<-ggplot(data=filter(div_own, metric=='rarefied richness'), aes(x=MAP_mm, y=div))+
+  geom_point(aes(color=ownership))+
+  geom_smooth(data=filter(div_own, metric=='rarefied richness'&ownership=='public'), method = 'lm', color='#009E73')+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
+  ylab('Rarefied Richness')+
+  xlab('Annual Precip. (mm)')
+  #scale_color_manual(name = "Planted Status", values=c("#7B3294","#009E73"), labels=c('Planted', 'Natural Regeneration'))
+map_rich_plot_own
 
 # NMDS analyses and figure 6 ----------------------------------------------
 
