@@ -119,7 +119,8 @@ percents_for_nancy<-propowner %>%
   left_join(propowner) %>% 
   mutate(percent=n/tot)
 
-mean(subset(percents_for_nancy, OWNGRPCD=='Private')$percent)
+mean(subset(percents_for_nancy, OWNGRPCD=='Private')$percent) #54% private
+sd(subset(percents_for_nancy, OWNGRPCD=='Private')$percent)/sqrt(27) #se 2%
 
 fig2a<-propowner%>% 
   ggplot() +
@@ -150,7 +151,8 @@ propPlanted <- trees_coords_merge %>%
   group_by(city) %>% 
   mutate(proportion = round(n/sum(n), 2))
 
-mean(subset(propPlanted, planted_def=='Planted')$proportion)
+mean(subset(propPlanted, planted_def=='Planted')$proportion) #32% planted
+sd(subset(propPlanted, planted_def=='Planted')$proportion)/sqrt(27) # se 3%
 
 
 Fig2b<-propPlanted %>% 
@@ -192,13 +194,22 @@ Planted_Own <- trees_coords_merge %>%
   inner_join(y = tree_city_merge) |> 
   select(city, own, planted_def, n) |> 
   left_join(ownertotal) |> 
-  mutate(prop=n/tot) 
+  mutate(prop=n/tot) |> 
+  mutate(own=as.factor(own),planted_def=as.factor(planted_def))
 
-ggplot(data=Planted_Own, aes(x=city, y=prop, fill=planted_def))+
-  geom_bar(aes(group=own), stat='identity')+
-  #scale_color_manual(values=c('black', 'gray'))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  facet_wrap(~own)
+plant_own_ave<-Planted_Own |> 
+  group_by(own, planted_def) |> 
+  summarise(m=mean(prop), sd=sd(prop), n=length(prop)) |> 
+  mutate(se=sd/sqrt(n))
+
+ggplot(data=Planted_Own, aes(x=own, y=prop, fill=planted_def))  +
+  geom_col(aes(fill = factor(planted_def, levels=c('Unknown','Natural Regeneration', 'Planted'))))+
+  scale_fill_manual(name = "Planted Status", values=c("#000000","#009E73", "#7B3294" )) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ylab('Proportion of Trees')+
+facet_wrap(~city, ncol=7)
+
+ggsave("Results/AppendixFig1.jpeg", height = 5, width = 10)
 
 # ##impact of density and age on prop
 # 
@@ -877,31 +888,41 @@ div_owner_means<-diversity_owner %>%
   mutate(se=sd/sqrt(n),
          sig=ifelse(metric=='rarefied richness', '*', ''))
 
-a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval, label=sig))+
+labels=c('beta_diversity'='Beta Diverstiy', 'evenness'='Evenness', 'rarefied richness'= 'Rarefied Richness')
+
+a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval, label=sig, fill=ownership))+
   geom_bar(stat='identity')+
+  scale_fill_manual(name = "Ownership", values=c('#E69F00','#0072B2'), labels=c('Private', 'Public'))+
   geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
-  facet_wrap(~metric, ncol=1, scales='free_y')+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  facet_wrap(~metric, ncol=1, scales='free_y', labeller=labeller(metric=labels))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'none')+
   ylab('Mean Diversity Value')+
   xlab('Ownership')+
-  geom_text(aes(x=1.5, y=Inf))
+  geom_text(aes(x = 1.5, y = Inf, label = sig),
+    inherit.aes = FALSE,
+    vjust = 1,
+    size = 8
+  )+
+  scale_x_discrete(labels = c('Private', 'Public'))
   
 a
 
 
-b<-ggplot(data=div_plant_means, aes(x=planted, y=mval))+
+b<-ggplot(data=div_plant_means, aes(x=planted, y=mval, fill=planted))+
   geom_bar(stat='identity')+
+  scale_fill_manual(name = "Planted Status", values=c("#7B3294","#009E73"), labels=c('Planted', 'Natural Regeneration')) +
   geom_errorbar(aes(ymin=mval-se, ymax=mval+se), width=0.2)+
-  facet_wrap(~metric, ncol=1, scales='free_y')+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
+  facet_wrap(~metric, ncol=1, scales='free_y',labeller=labeller(metric=labels))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'none')+
   ylab('Mean Diversity Value')+
   xlab('Planted Status')+
-  annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)
+  annotate('text', x=1.5, y=Inf, vjust=1, label="*", size=8)+
+  scale_x_discrete(labels = c('Planted', 'Natural Regeneration'))
 b
 
+divmeansplots<-grid.arrange(a,b, ncol=2) #make colors pretty
 
-
-ggsave("Results/diversity_plots.pdf", div_fig, height = 5, width = 7)
+ggsave("Results/diversity_plots.jpeg", divmeansplots, height = 5, width = 7)
 
 # ttest between ownership and planting types ------------------------------
 
@@ -950,10 +971,10 @@ summary(lm(div~Tmin_C, data=subset(div_own, metric=='rarefied richness'&ownershi
 summary(lm(div~MAP_mm, data=subset(div_own, metric=='rarefied richness'&ownership=='private')))
 summary(lm(div~Tmin_C, data=subset(div_own, metric=='rarefied richness'&ownership=='private')))
 
-#overall for a city not by planted status
-summary(lm(rrichness~MAP_mm, data=subset(div_rare)))
-summary(lm(rrichness~MAP_mm, data=subset(div_rare, MAP_mm>500)))
-summary(lm(rrichness~Tmin_C, data=subset(div_rare)))
+# #overall for a city not by planted status
+# summary(lm(rrichness~MAP_mm, data=subset(div_rare)))
+# summary(lm(rrichness~MAP_mm, data=subset(div_rare, MAP_mm>500)))
+# summary(lm(rrichness~Tmin_C, data=subset(div_rare)))
 
 map_rich_plot<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=MAP_mm, y=div))+
   geom_point(aes(color=planted))+
@@ -964,27 +985,29 @@ map_rich_plot<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x
   scale_color_manual(name = "Planted Status", values=c("#7B3294","#009E73"), labels=c('Planted', 'Natural Regeneration'))
 map_rich_plot
 
-temp_rich_plot<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=Tmin_C, y=div))+
-  geom_point(aes(color=planted))+
+map_rich_plot_own<-ggplot(data=filter(div_own, metric=='rarefied richness'), aes(x=MAP_mm, y=div))+
+  geom_point(aes(color=ownership))+
+  geom_smooth(data=filter(div_own, metric=='rarefied richness'&ownership=='public'), method = 'lm', color='#0072B2')+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
   ylab('Rarefied Richness')+
-  xlab(expression(Minimum~Temperature~(degree*C)))+
-  scale_color_manual(name = "Planted Status", values=c("#7B3294","#009E73"), labels=c('Planted', 'Natural Regeneration'))
-temp_rich_plot
+  xlab('Annual Precip. (mm)')+
+scale_color_manual(name = "Ownership", values=c('#E69F00','#0072B2'), labels=c('Private', 'Public'))
+map_rich_plot_own
 
-climatefig<-ggarrange(map_rich_plot, temp_rich_plot, common.legend = T, labels=c('A',"B"))
+# temp_rich_plot<-ggplot(data=filter(div_plant, metric=='rarefied richness'), aes(x=Tmin_C, y=div))+
+#   geom_point(aes(color=planted))+
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
+#   ylab('Rarefied Richness')+
+#   xlab(expression(Minimum~Temperature~(degree*C)))+
+#   scale_color_manual(name = "Planted Status", values=c("#7B3294","#009E73"), labels=c('Planted', 'Natural Regeneration'))
+# temp_rich_plot
+
+climatefig<-ggarrange(map_rich_plot, map_rich_plot_own, labels=c('A',"B"))
 climatefig
 
 ggsave("Results/Fig5.jpeg", climatefig, height = 5, width = 7)
 
-map_rich_plot_own<-ggplot(data=filter(div_own, metric=='rarefied richness'), aes(x=MAP_mm, y=div))+
-  geom_point(aes(color=ownership))+
-  geom_smooth(data=filter(div_own, metric=='rarefied richness'&ownership=='public'), method = 'lm', color='#009E73')+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), legend.position = 'top')+
-  ylab('Rarefied Richness')+
-  xlab('Annual Precip. (mm)')
-  #scale_color_manual(name = "Planted Status", values=c("#7B3294","#009E73"), labels=c('Planted', 'Natural Regeneration'))
-map_rich_plot_own
+
 
 # NMDS analyses and figure 6 ----------------------------------------------
 
