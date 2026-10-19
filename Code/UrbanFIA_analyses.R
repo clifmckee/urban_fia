@@ -103,6 +103,13 @@ climate2<-climate %>%
 
 pairs(climate2[,4:6])
 
+##number of plots 
+plots<-trees_coords_merge |> 
+  select(city, PLOTID) |> 
+  unique() |> 
+  group_by(city) |> 
+  summarise(n=length(PLOTID))
+
 
 # Abundance of trees by ownership and planted Fig 2 ---------------------------------------
 
@@ -331,7 +338,6 @@ accumulationPlot<-poolaccum_S %>%
   labs(x = "Number of plots with live trees", y = "Number of tree species") +
   theme_bw(base_size = 10) +
   theme(legend.position = "bottom", panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-
 
 # Plot species accumulation curves by city WITH EXTRAPOLATION
 estmated_plot<-poolaccum_S %>% 
@@ -1005,7 +1011,7 @@ map_rich_plot_own
 climatefig<-ggarrange(map_rich_plot, map_rich_plot_own, labels=c('A',"B"))
 climatefig
 
-ggsave("Results/Fig5.jpeg", climatefig, height = 5, width = 7)
+ggsave("Results/Fig5.jpeg", climatefig, height = 5, width = 8)
 
 
 
