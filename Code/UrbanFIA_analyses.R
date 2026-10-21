@@ -879,7 +879,7 @@ b
 
 div_fig<-grid.arrange(a,b, nrow=1)
 
-ggsave('Results\\Diversity_BigFig.jpeg', div_fig, width=10, height=10, units='in')
+ggsave('Results\\Diversity_BigFig_new.jpeg', div_fig, width=10, height=10, units='in')
 
 #figure of averages
 
@@ -894,7 +894,7 @@ div_owner_means<-diversity_owner %>%
   mutate(se=sd/sqrt(n),
          sig=ifelse(metric=='rarefied richness', '*', ''))
 
-labels=c('beta_diversity'='Beta Diverstiy', 'evenness'='Evenness', 'rarefied richness'= 'Rarefied Richness')
+labels=c('beta_diversity'='Beta Diversity', 'evenness'='Evenness', 'rarefied richness'= 'Rarefied Richness')
 
 a<-ggplot(data=div_owner_means, aes(x=ownership, y=mval, label=sig, fill=ownership))+
   geom_bar(stat='identity')+
