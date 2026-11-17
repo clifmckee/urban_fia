@@ -339,41 +339,41 @@ accumulationPlot<-poolaccum_S %>%
   theme_bw(base_size = 10) +
   theme(legend.position = "bottom", panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
-# Plot species accumulation curves by city WITH EXTRAPOLATION
-estmated_plot<-poolaccum_S %>% 
-  ggplot() +
-  # geom_ribbon(aes(x = n, ymin = lower, ymax = upper,
-  #                 group = city), alpha = 0.1) +
-  geom_line(aes(x = n, y = mean,
-                group = city, color=MAP_mm)) +
-    geom_segment(data = extimated_toplot,
-               aes(x = n, y = mean,
-                   xend = n_end, yend = est,
-                   group = city, color=MAP_mm),
-               linetype = "dashed") +
-  geom_point(data = extimated_toplot,
-             aes(x = n_end, y = est,
-                 group = city, color=MAP_mm),
-             size = 2.5) +
-  
-  geom_text_repel(data = extimated_toplot,
-                   aes(label = paste0(city, " = ", round(est, 0)),
-                      x = n_end+5,
-                      y = est),
-                  nudge_x = 5,
-                  min.segment.length = 2,
-                  size = 2.5,
-                  max.overlaps = 22) +
-  
-  scale_color_viridis_c(name = "MAP (mm)", option = "viridis")+
-  
-  labs(x = "Number of plots with live trees", y = "Number of tree species") +
-  theme_bw(base_size = 10) +
-  theme(legend.position = "bottom", panel.grid.major = element_blank(), panel.grid.minor=element_blank())
+# # Plot species accumulation curves by city WITH EXTRAPOLATION
+# estmated_plot<-poolaccum_S %>% 
+#   ggplot() +
+#   # geom_ribbon(aes(x = n, ymin = lower, ymax = upper,
+#   #                 group = city), alpha = 0.1) +
+#   geom_line(aes(x = n, y = mean,
+#                 group = city, color=MAP_mm)) +
+#     geom_segment(data = extimated_toplot,
+#                aes(x = n, y = mean,
+#                    xend = n_end, yend = est,
+#                    group = city, color=MAP_mm),
+#                linetype = "dashed") +
+#   geom_point(data = extimated_toplot,
+#              aes(x = n_end, y = est,
+#                  group = city, color=MAP_mm),
+#              size = 2.5) +
+#   
+#   geom_text_repel(data = extimated_toplot,
+#                    aes(label = paste0(city, " = ", round(est, 0)),
+#                       x = n_end+5,
+#                       y = est),
+#                   nudge_x = 5,
+#                   min.segment.length = 2,
+#                   size = 2.5,
+#                   max.overlaps = 22) +
+#   
+#   scale_color_viridis_c(name = "MAP (mm)", option = "viridis")+
+#   
+#   labs(x = "Number of plots with live trees", y = "Number of tree species") +
+#   theme_bw(base_size = 10) +
+#   theme(legend.position = "bottom", panel.grid.major = element_blank(), panel.grid.minor=element_blank())
+# 
+# fig3<-ggarrange(accumulationPlot, estmated_plot, labels=c('A', 'B'), common.legend = T, ncol=1)
 
-fig3<-ggarrange(accumulationPlot, estmated_plot, labels=c('A', 'B'), common.legend = T, ncol=1)
-
-ggsave("Results/Figure3.jpeg", height = 10, width = 8)
+ggsave("Results/Figure3_new.jpeg", height = 6, width = 8)
 
 
 # comparing extrapolations ------------------------------------------------
